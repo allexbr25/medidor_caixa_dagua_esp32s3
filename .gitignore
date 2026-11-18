@@ -1,0 +1,12 @@
+# Ignorar credenciais locais
+firmware/monitor_caixa_dagua/config.h
+include/config.h
+src/config.h
+
+# PlatformIO / Arduino build artifacts
+.pio/
+.vscode/
+build/
+*.bin
+*.elf
+*.map
