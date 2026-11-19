@@ -1,75 +1,59 @@
-# Monitor Inteligente de Caixa d'Água (ESP32-S3 + JSN-SR04T + Energia Solar)
+# Monitor de Caixa d'Água (ESP32-S3 + JSN-SR04T + Energia Solar)
 
-Sistema completo de monitoramento de nível de caixa d'água (**Fortlev 5.000 L**, formato tronco de cone) alimentado por energia solar, com telemetria de geração fotovoltaica e bateria, proteção térmica de carregamento e alertas via **Telegram + ThingSpeak**.
+Sistema de monitoramento de nível de caixa d'água (**Fortlev 5.000 L**, formato tronco de cone) alimentado por energia solar e baterias 18650, com envio de dados para **ThingSpeak** e alertas via **Telegram**.
 
-## Estrutura do Repositório
+## Lista Exata de Componentes
 
-```text
-monitor-caixa-dagua-esp32s3/
-├── README.md                                        # Documentação completa de hardware, montagem e cálculos
-├── platformio.ini                                   # Configuração para PlatformIO (ESP32-S3)
-└── firmware/
-    └── monitor_caixa_dagua/
-        ├── monitor_caixa_dagua.ino                  # Firmware completo (Arduino IDE / PlatformIO)
-        └── config.example.h                         # Modelo de configuração (Wi-Fi, Telegram, ThingSpeak)
-```
-
-### Como compilar e gravar
-1. Copie o arquivo `firmware/monitor_caixa_dagua/config.example.h` para `firmware/monitor_caixa_dagua/config.h` e preencha o seu `WIFI_SSID`, `WIFI_PASSWORD`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` e `THINGSPEAK_API_KEY`.
-2. **No PlatformIO:** abra esta pasta no VS Code / Antigravity e clique em **Upload**.
-3. **Na Arduino IDE:** abra `firmware/monitor_caixa_dagua/monitor_caixa_dagua.ino`, selecione a placa **ESP32S3 Dev Module** e instale as bibliotecas `Adafruit INA219`, `OneWire`, `DallasTemperature`, `UniversalTelegramBot` e `ArduinoJson`.
+* **Microcontrolador:** ESP32-S3 com antena externa
+* **Sensor de Nível:** Ultrassônico à prova d'água JSN-SR04T
+* **Proteção de Sinal:** Conversor de nível lógico bidirecional (5V ↔ 3.3V)
+* **Gestão de Carga:** Módulo carregador TP4056 (entrada solar / bateria)
+* **Regulação de Tensão:** Módulo elevador Step-Up MT3608 (ajustado para saída de 5V)
+* **Alimentação:** Bateria de lítio (2× 18650 EVE 3.200 mAh em paralelo) + Painel solar 6V 6W
+* **Proteção Física:** Caixa hermética IP65
 
 ---
 
-## 1. Arquitetura geral
+## 1. Diagrama de Ligação
 
 ```mermaid
 flowchart LR
-    PV["Painel Solar 5-6V 6W"] -->|"Diodo Schottky 1N5819"| TP["TP4056 / CN3791 (IN+ / IN-)"]
-    BAT["Pack Externo 2x18650 EVE 6400mAh"] <-->|"Fusível 3A + B+ / B-"| TP
-    TP -->|"OUT+ / OUT-"| MT["MT3608 Step-Up -> 5V"]
-    TP -->|"INA219 / Divisor 100k/100k"| ADC["GPIO1 (ADC1) / I2C - tensão da bateria"]
-    MT -->|"5V"| ESP["ESP32-S3 (pino 5V/VIN)"]
-    MT -->|"5V via MOSFET"| JSN["JSN-SR04T VCC"]
-    ESP -->|"3V3"| LV["Level Shifter LV"]
-    MT -->|"5V"| HV["Level Shifter HV"]
-    ESP -->|"GPIO4 TRIG"| LV
-    LV <--> HV
+    PV["Painel Solar 6V 6W"] -->|"IN+ / IN-"| TP["Módulo TP4056"]
+    BAT["Pack 2x18650 em Paralelo"] <-->|"B+ / B-"| TP
+    TP -->|"OUT+ / OUT-"| MT["Step-Up MT3608 (ajustado p/ 5,0 V)"]
+    MT -->|"5V (VOUT+)"| ESP["ESP32-S3 (pino 5V / VIN)"]
+    MT -->|"5V (VOUT+)"| JSN["JSN-SR04T (VCC)"]
+    MT -->|"5V (VOUT+)"| HV["Conversor Lógico (HV)"]
+    ESP -->|"3V3"| LV["Conversor Lógico (LV)"]
+    ESP -->|"GPIO4 (TRIG)"| LV
+    LV <-->|"LV1 <-> HV1 / LV2 <-> HV2"| HV
     HV -->|"TRIG / ECHO"| JSN
-    HV -->|"ECHO"| LV -->|"GPIO5 ECHO"| ESP
-    ESP -->|"GPIO6 liga/desliga sensor"| JSN
+    HV -->|"LV2 -> GPIO5 (ECHO)"| ESP
 ```
 
-## 2. Ligações (tabela de fiação)
+## 2. Tabela de Fiação Completa
 
-### Energia
+### Alimentação
 
-| De | Para | Observação |
+| Origem | Destino | Observação |
 |---|---|---|
-| Painel (+) | Diodo Schottky (ânodo) → cátodo → TP4056 **IN+** | O diodo impede que a bateria descarregue pelo painel à noite |
-| Painel (−) | MOSFET AO3400 (corte térmico) → TP4056 **IN−** | Corta o carregamento acima de 45 °C |
-| Pack 2×18650 (+/−) | Porta-fusível 3 A → TP4056 **B+ / B−** | |
-| TP4056 **OUT+ / OUT−** | MT3608 **VIN+ / VIN−** | Use a versão do TP4056 **com proteção (DW01, 6 pinos)** |
-| MT3608 **VOUT+** (5,0 V) | ESP32-S3 **5V/VIN** + Level shifter **HV** + JSN-SR04T **VCC** (via MOSFET) | Ajuste o trimpot do MT3608 **antes** de ligar no ESP32 (meça com multímetro) |
-| MT3608 **VOUT−** | GND comum de tudo | **Todos os GNDs devem estar interligados** |
+| Painel Solar (+ / −) | TP4056 **IN+ / IN−** | Carregamento solar |
+| Baterias 18650 (+ / −) | TP4056 **B+ / B−** | Carregue as duas células na mesma tensão antes de unir em paralelo |
+| TP4056 **OUT+ / OUT−** | MT3608 **VIN+ / VIN−** | Saída protegida pelo circuito do TP4056 |
+| MT3608 **VOUT+** (5,0 V) | ESP32-S3 **5V/VIN**, Conversor Lógico **HV** e JSN-SR04T **VCC** | ⚠️ Ajuste o trimpot do MT3608 para **5,0 V** com multímetro **antes** de conectar o ESP32-S3 |
+| MT3608 **VOUT−** | **GND** do ESP32-S3, Conversor Lógico e JSN-SR04T | Todos os GNDs interligados |
 
-### Sinais
+### Sinais (ESP32-S3 ↔ Conversor de Nível Lógico ↔ JSN-SR04T)
 
-| ESP32-S3 | Level Shifter / Barramento | Periférico |
+| ESP32-S3 | Conversor de Nível Lógico (3.3V ↔ 5V) | Módulo JSN-SR04T |
 |---|---|---|
-| 3V3 | LV | Alimentação 3,3 V |
-| GND | GND (dos dois lados) | GND comum |
-| GPIO4 (TRIG) | LV1 ↔ HV1 | JSN-SR04T TRIG |
-| GPIO5 (ECHO) | LV2 ↔ HV2 | JSN-SR04T ECHO |
-| GPIO6 | — | Gate do MOSFET que liga/desliga o JSN-SR04T |
-| GPIO8 (SDA) | I2C SDA | INA219 Solar (0x40) + INA219 Bateria (0x41) |
-| GPIO9 (SCL) | I2C SCL | INA219 Solar (0x40) + INA219 Bateria (0x41) |
-| GPIO10 | 1-Wire (pull-up 4,7 kΩ p/ 3V3) | DS18B20 no pack externo de baterias |
-| GPIO11 | Gate 2N7000 (resistor 1 kΩ) | Corte de carregamento solar (> 45 °C) |
-| GPIO1 (ADC1) | — | Ponto central do divisor 100k/100k em B+ (fallback caso não use INA219 #2) |
+| Pino **3V3** | Pino **LV** (referência de baixa tensão) | — |
+| Pino **5V / VIN** (da saída do MT3608) | Pino **HV** (referência de alta tensão) | Pino **VCC** (5V) |
+| Pino **GND** | Pino **GND** (lado LV e lado HV) | Pino **GND** |
+| **GPIO4** (Trigger) | **LV1** → sai pelo **HV1** | Pino **TRIG** |
+| **GPIO5** (Echo) | Entra pelo **HV2** → sai pelo **LV2** | Pino **ECHO** |
 
-> [!WARNING]
-> **Pinos a evitar no ESP32-S3:** GPIO0, 3, 45 e 46 (strapping), 19 e 20 (USB nativo), 26 a 32 (flash) e 33 a 37 (em placas com PSRAM octal, como a N16R8). Para medir com ADC use sempre o **ADC1 (GPIO1 a GPIO10)**, porque o ADC2 não funciona com o Wi-Fi ligado.
+---
 
 ## 3. Geometria da Caixa d'Água (Fortlev 5.000 L, tronco de cone)
 
@@ -104,36 +88,13 @@ flowchart LR
 | 1,40 m | 4.745 | 96% |
 | 1,45 m | 4.953 | 100% |
 
-## 4. Sistema de Energia e Pack de Baterias Separado
+---
 
-| Item | Valor |
-|---|---|
-| Banco de baterias | 2× EVE 18650 3.200 mAh em paralelo (1S2P): **6.400 mAh** a 3,6 V |
-| Painel solar | 6 V / 6 W monocristalino |
-| Consumo estimado (medição a cada 5 min + deep sleep) | ~120 mAh/dia |
-| **Autonomia sem sol** | **~45 dias** |
+## 4. Como Compilar e Gravar
 
-```mermaid
-flowchart LR
-    subgraph BAT["Caixa das baterias (vedada, na sombra, embaixo)"]
-        C["2x18650 em paralelo"] --> F["Fusível 3A (ou PTC) junto ao polo +"]
-        T["DS18B20 colado nas células"]
-    end
-    subgraph ELE["Caixa da eletrônica (ventilada)"]
-        TP["TP4056 / CN3791 + DW01"] --> MT["MT3608"] --> ESP["ESP32-S3"]
-    end
-    F -->|"cabo 0,75 mm², até ~50 cm, conector GX12/GX16"| TP
-    T -->|"3 vias"| ESP
-```
-
-### Corte de carga por temperatura (bateria > 45 °C)
-
-```text
-Painel(+) ──► Schottky ──► TP4056 IN+
-Painel(−) ──► [D  AO3400  S] ──► TP4056 IN−
-                  G ──100k── Painel(+)
-                  G ──► 2N7000 ◄── GPIO11  (GPIO11 = HIGH → corta a carga)
-```
-
-- **À prova de falha (fail-safe):** se o ESP32 travar ou a bateria acabar, o MOSFET continua conduzindo pelo resistor de pull-up de 100 kΩ e a carga continua normalmente.
-- **Histerese:** corta a carga a **45 °C** e retoma a **40 °C** (também corta abaixo de **0 °C**).
+1. Copie `firmware/monitor_caixa_dagua/config.example.h` para `firmware/monitor_caixa_dagua/config.h` e preencha:
+   * `WIFI_SSID` e `WIFI_PASSWORD`
+   * `TELEGRAM_BOT_TOKEN` e `TELEGRAM_CHAT_ID`
+   * `THINGSPEAK_API_KEY`
+2. **PlatformIO:** abra a pasta do projeto e clique em **Upload**.
+3. **Arduino IDE:** abra `firmware/monitor_caixa_dagua/monitor_caixa_dagua.ino`, selecione a placa **ESP32S3 Dev Module** e instale as bibliotecas `UniversalTelegramBot` e `ArduinoJson`.
