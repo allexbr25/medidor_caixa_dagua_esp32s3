@@ -13,21 +13,21 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans select-none">
 
   <!-- ====================================================================== -->
-  <!-- TELA DE AUTENTICAÇÃO (LOGIN / CADASTRO / LEITOR DE DIGITAL BIOMÉTRICO) -->
+  <!-- TELA DE AUTENTICAÇÃO (LOGIN / CADASTRO COM E-MAIL / LIBERAÇÃO ADMIN)  -->
   <!-- ====================================================================== -->
   <div id="authScreen" class="min-h-screen flex items-center justify-center p-4">
-    <div class="w-full max-w-md bg-slate-900/95 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
+    <div class="w-full max-w-md bg-slate-900/95 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-5">
       <!-- App Icon & Title -->
-      <div class="text-center space-y-2">
+      <div class="text-center space-y-1.5">
         <div class="w-16 h-16 mx-auto rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-3xl shadow-inner">
           💧
         </div>
         <h1 class="text-xl font-bold tracking-tight">Caixa d'Água Fortlev 5.000 L</h1>
-        <p class="text-xs text-slate-400">Acesso protegido por Criptografia PBKDF2/AES-256 &amp; Biometria</p>
+        <p class="text-xs text-slate-400">Acesso Restrito • Criptografia PBKDF2/AES &amp; Biometria</p>
       </div>
 
       <!-- Tabs: Entrar / Cadastrar -->
-      <div class="grid grid-cols-2 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 text-xs font-semibold">
+      <div id="authTabs" class="grid grid-cols-2 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 text-xs font-semibold">
         <button id="tabLoginBtn" class="py-2 rounded-lg bg-sky-600 text-white transition">
           🔐 Entrar
         </button>
@@ -41,27 +41,27 @@
 
       <!-- FORMULÁRIO DE LOGIN -->
       <div id="loginPanel" class="space-y-4">
-        <!-- Botão Principal de Impressão Digital (aparece em destaque se cadastrada) -->
+        <!-- Botão Principal de Impressão Digital (aparece em destaque se cadastrada e aprovada) -->
         <button id="btnBiometricLogin" type="button"
           class="hidden w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-sm shadow-lg shadow-emerald-950/60 flex items-center justify-center gap-3 border border-emerald-400/30 transition active:scale-[0.99]">
           <span class="text-2xl">👆</span>
           <div class="text-left">
             <div class="leading-tight">Entrar com Impressão Digital</div>
-            <div class="text-[11px] text-emerald-100/80 font-normal">Autenticação biométrica do dispositivo</div>
+            <div id="bioUserSubtitle" class="text-[11px] text-emerald-100/80 font-normal">Autenticação biométrica do dispositivo</div>
           </div>
         </button>
 
         <div id="dividerBio" class="hidden flex items-center gap-3 text-[11px] text-slate-500">
           <div class="h-px bg-slate-800 flex-1"></div>
-          <span>ou acesse com usuário e senha</span>
+          <span>ou acesse com e-mail/usuário e senha</span>
           <div class="h-px bg-slate-800 flex-1"></div>
         </div>
 
         <form id="loginForm" class="space-y-3.5">
           <div>
-            <label class="block text-xs text-slate-400 mb-1">Usuário</label>
-            <input id="loginUser" type="text" autocomplete="username" required
-              placeholder="Digite seu usuário"
+            <label class="block text-xs text-slate-400 mb-1">E-mail ou Usuário</label>
+            <input id="loginId" type="text" autocomplete="username" required
+              placeholder="seuemail@gmail.com ou usuário"
               class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-sm focus:outline-none focus:border-sky-400" />
           </div>
           <div>
@@ -77,42 +77,93 @@
         </form>
       </div>
 
-      <!-- FORMULÁRIO DE CADASTRO SEGURO -->
-      <form id="registerForm" class="hidden space-y-3.5">
+      <!-- FORMULÁRIO DE CADASTRO SEGURO COM E-MAIL -->
+      <form id="registerForm" class="hidden space-y-3">
         <div>
-          <label class="block text-xs text-slate-400 mb-1">Novo Usuário</label>
+          <label class="block text-xs text-slate-400 mb-1">Nome de Usuário</label>
           <input id="regUser" type="text" autocomplete="username" required minlength="3"
             placeholder="Ex: alex"
-            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-sm focus:outline-none focus:border-sky-400" />
+            class="w-full px-3.5 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-sm focus:outline-none focus:border-sky-400" />
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">E-mail (obrigatório para liberação)</label>
+          <input id="regEmail" type="email" autocomplete="email" required
+            placeholder="seuemail@gmail.com"
+            class="w-full px-3.5 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-sm focus:outline-none focus:border-sky-400" />
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <div>
             <label class="block text-xs text-slate-400 mb-1">Senha (mín. 6 dígitos)</label>
             <input id="regPass" type="password" autocomplete="new-password" required minlength="6"
               placeholder="••••••••"
-              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-sm focus:outline-none focus:border-sky-400" />
+              class="w-full px-3.5 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-sm focus:outline-none focus:border-sky-400" />
           </div>
           <div>
             <label class="block text-xs text-slate-400 mb-1">Confirmar Senha</label>
             <input id="regPassConfirm" type="password" autocomplete="new-password" required minlength="6"
               placeholder="••••••••"
-              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-sm focus:outline-none focus:border-sky-400" />
+              class="w-full px-3.5 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-sm focus:outline-none focus:border-sky-400" />
           </div>
         </div>
 
-        <label class="flex items-center gap-2.5 p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/60 cursor-pointer text-xs">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Código de Liberação (opcional se já tiver recebido)</label>
+          <input id="regApprovalCode" type="text"
+            placeholder="Deixe em branco para solicitar ao Admin"
+            class="w-full px-3.5 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-xs font-mono uppercase focus:outline-none focus:border-sky-400" />
+        </div>
+
+        <label class="flex items-center gap-2.5 p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-800/60 cursor-pointer text-xs">
           <input id="regEnableBio" type="checkbox" checked class="accent-emerald-400 w-4 h-4" />
           <div>
-            <div class="font-semibold text-emerald-300">👆 Cadastrar Impressão Digital agora</div>
-            <div class="text-[11px] text-slate-400">Vincula o leitor biométrico do Android/dispositivo à sua conta</div>
+            <div class="font-semibold text-emerald-300">👆 Cadastrar Impressão Digital</div>
+            <div class="text-[11px] text-slate-400">Vincula o leitor biométrico do Android/dispositivo</div>
           </div>
         </label>
 
         <button type="submit"
           class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm shadow-lg transition">
-          Criar Conta Criptografada
+          Cadastrar e Solicitar Acesso
         </button>
       </form>
+
+      <!-- TELA DE CONTA PENDENTE DE LIBERAÇÃO DO ADMINISTRADOR -->
+      <div id="pendingApprovalPanel" class="hidden space-y-4 bg-slate-800/50 border border-amber-700/60 rounded-2xl p-4 text-xs">
+        <div class="flex items-start gap-3">
+          <span class="text-2xl">⏳</span>
+          <div class="space-y-1">
+            <div class="text-sm font-bold text-amber-300">Aguardando Liberação do Administrador</div>
+            <p class="text-slate-300 leading-relaxed">
+              O cadastro de <span id="pendingEmailLabel" class="font-mono font-semibold text-white">--</span> foi salvo, mas como este repositório é público, o acesso aos dados da Caixa d'Água só é liberado com o código do Administrador.
+            </p>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <a id="btnRequestEmail" href="#"
+            class="w-full py-2.5 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold flex items-center justify-center gap-2 transition">
+            <span>✉️</span>
+            <span>Enviar Pedido de Liberação por E-mail ao Admin</span>
+          </a>
+        </div>
+
+        <div class="pt-2 border-t border-slate-700 space-y-2">
+          <label class="block text-slate-300 font-medium">Já recebeu o Código de Liberação para seu e-mail?</label>
+          <input id="inputPendingCode" type="text"
+            placeholder="XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX"
+            class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 font-mono text-xs uppercase text-center focus:outline-none focus:border-emerald-400" />
+          <div class="flex gap-2">
+            <button id="btnActivateCode" type="button"
+              class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition">
+              ✅ Validar e Liberar Acesso
+            </button>
+            <button id="btnBackToLogin" type="button"
+              class="px-3 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition">
+              Voltar
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Botão de Instalação PWA Android -->
       <button id="btnInstallPwaAuth" type="button"
@@ -124,23 +175,31 @@
   </div>
 
   <!-- ====================================================================== -->
-  <!-- PAINEL PRINCIPAL (EXIBIDO APENAS APÓS AUTENTICAÇÃO)                    -->
+  <!-- PAINEL PRINCIPAL (EXIBIDO APENAS APÓS AUTENTICAÇÃO E APROVAÇÃO)        -->
   <!-- ====================================================================== -->
   <div id="dashboardScreen" class="hidden p-4 md:p-8">
     <div class="max-w-4xl mx-auto space-y-5">
       <!-- Top Security & User Bar -->
       <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-900/70 border border-slate-800/90 rounded-xl px-4 py-2.5 text-xs">
-        <div class="flex items-center gap-2 text-slate-300">
-          <span>👤 Usuário autenticado:</span>
+        <div class="flex flex-wrap items-center gap-2 text-slate-300">
+          <span>👤</span>
           <span id="loggedUserName" class="font-semibold text-sky-400">--</span>
+          <span id="loggedUserEmail" class="text-slate-400 font-mono text-[11px]">(--)</span>
+          <span id="rolePill" class="px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-700 text-[11px] font-semibold">
+            👑 Admin
+          </span>
           <span id="bioStatusPill" class="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[11px]">
             👆 Digital Ativa
           </span>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="btnToggleAdminModal" type="button"
+            class="hidden px-2.5 py-1 rounded-lg bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-600/50 font-medium transition">
+            🔑 Liberar Acessos
+          </button>
           <button id="btnEnrollBioInApp" type="button"
             class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 transition">
-            👆 Configurar Digital
+            👆 Digital
           </button>
           <button id="btnInstallPwaDash" type="button"
             class="hidden px-2.5 py-1 rounded-lg bg-sky-950 hover:bg-sky-900 text-sky-300 border border-sky-800 transition">
@@ -150,6 +209,53 @@
             class="px-2.5 py-1 rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800/70 transition">
             🔒 Bloquear
           </button>
+        </div>
+      </div>
+
+      <!-- PAINEL DO ADMINISTRADOR: GERADOR DE LIBERAÇÃO POR E-MAIL -->
+      <div id="adminApprovalBox" class="hidden bg-slate-900/95 border border-amber-600/50 rounded-2xl p-5 space-y-4 text-xs shadow-xl">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-sm font-bold text-amber-300 flex items-center gap-2">
+              <span>👑</span>
+              <span>Central de Liberação de Acesso (Exclusivo do Administrador)</span>
+            </h2>
+            <p class="text-slate-400 mt-0.5">
+              Gere um Código de Liberação criptográfico vinculado ao e-mail de quem você deseja autorizar, ou aprove cadastros pendentes neste aparelho.
+            </p>
+          </div>
+          <button id="btnCloseAdminBox" type="button" class="text-slate-400 hover:text-white px-2 py-1">✕</button>
+        </div>
+
+        <!-- Gerar código para qualquer e-mail -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end bg-slate-800/60 p-3.5 rounded-xl border border-slate-700">
+          <div class="md:col-span-6">
+            <label class="block text-slate-300 mb-1 font-medium">E-mail do usuário a liberar:</label>
+            <input id="adminTargetEmail" type="email" placeholder="familiar@gmail.com"
+              class="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-sm focus:outline-none focus:border-amber-400" />
+          </div>
+          <div class="md:col-span-3">
+            <button id="btnGenerateCode" type="button"
+              class="w-full py-2 px-3 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-semibold transition">
+              Gerar Código
+            </button>
+          </div>
+          <div class="md:col-span-3">
+            <button id="btnCopyCode" type="button"
+              class="w-full py-2 px-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium transition">
+              📋 Copiar Código
+            </button>
+          </div>
+          <div id="generatedCodeWrap" class="hidden md:col-span-12 pt-2">
+            <div class="text-slate-400 mb-1">Código exclusivo para este e-mail (só funciona com ele):</div>
+            <div id="generatedCodeDisplay" class="p-2.5 rounded-lg bg-slate-950 border border-emerald-700 font-mono text-emerald-300 text-center text-sm select-all"></div>
+          </div>
+        </div>
+
+        <!-- Lista de usuários cadastrados localmente neste aparelho -->
+        <div class="space-y-2">
+          <div class="font-semibold text-slate-300">Contas cadastradas neste dispositivo:</div>
+          <div id="localUsersList" class="space-y-1.5"></div>
         </div>
       </div>
 
@@ -246,10 +352,21 @@
 
   <script>
     // ========================================================================
-    // 1. CRIPTOGRAFIA (PBKDF2-SHA256 100.000 ITERAÇÕES) & WEBAUTHN BIOMETRIA
+    // 1. COFRE CRIPTOGRÁFICO (PBKDF2-SHA256 100k + ASSINATURA DE LIBERAÇÃO)
     // ========================================================================
-    const VAULT_STORAGE_KEY = 'caixa_fortlev_auth_vault_v1';
-    let currentSessionUser = null;
+    // A Read API Key NÃO fica em texto puro no código público! Ela é descriptografada
+    // somente pela senha do Administrador ou por um Código de Liberação vinculado ao e-mail.
+    const ADMIN_EMAIL          = 'alexb.ribeiro.abr@gmail.com';
+    const ADMIN_SALT_B64       = 'Rm9ydGxldkFkbWluMjAyNg==';
+    const ADMIN_AUTH_CHECK_B64 = 'if+PnhPjDGyMG5GiBjkNJg==';
+    const ADMIN_ENC_RK_B64     = 'Xth7c/bDT1fAbxF260CcFg==';
+    const VERIFY_RK_HEX        = '64f361d7e00db530';
+    const CHANNEL_ID           = '3588391';
+
+    const VAULT_STORAGE_KEY    = 'caixa_fortlev_auth_vault_v2';
+    let currentSessionUser     = null;
+    let unlockedReadApiKey     = null;
+    let pendingUserKey         = null;
 
     function bufToBase64(buf) {
       return btoa(String.fromCharCode(...new Uint8Array(buf)));
@@ -257,8 +374,26 @@
     function base64ToBuf(b64) {
       return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
     }
+    function bufToHex(buf) {
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    function hexToBuf(hex) {
+      const clean = hex.replace(/[^0-9A-Fa-f]/g, '');
+      if (clean.length !== 32) return null;
+      const out = new Uint8Array(16);
+      for (let i = 0; i < 16; i++) {
+        out[i] = parseInt(clean.substring(i * 2, i * 2 + 2), 16);
+      }
+      return out;
+    }
 
-    async function derivePasswordHash(password, saltBytes) {
+    async function sha256Bytes(str) {
+      const enc = new TextEncoder();
+      const buf = await crypto.subtle.digest('SHA-256', enc.encode(str));
+      return new Uint8Array(buf);
+    }
+
+    async function derivePBKDF2Bytes(password, saltBytes) {
       const enc = new TextEncoder();
       const keyMaterial = await crypto.subtle.importKey(
         'raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveBits']
@@ -268,7 +403,54 @@
         keyMaterial,
         256
       );
-      return bufToBase64(bits);
+      return new Uint8Array(bits);
+    }
+
+    async function verifyReadKeyCandidate(rkStr) {
+      if (!rkStr || rkStr.length !== 16) return false;
+      const digest = await sha256Bytes('FORTLEV-RK:' + rkStr);
+      return bufToHex(digest).startsWith(VERIFY_RK_HEX);
+    }
+
+    // Verifica se o e-mail + senha correspondem ao Administrador Mestre e descriptografa a chave
+    async function tryUnlockAsMasterAdmin(emailNorm, password) {
+      if (emailNorm !== ADMIN_EMAIL) return null;
+      const salt = base64ToBuf(ADMIN_SALT_B64);
+      const dk = await derivePBKDF2Bytes(password, salt);
+      const checkB64 = bufToBase64(dk.slice(0, 16));
+      if (checkB64 !== ADMIN_AUTH_CHECK_B64) return null;
+
+      const encRk = base64ToBuf(ADMIN_ENC_RK_B64);
+      const rkBytes = new Uint8Array(16);
+      for (let i = 0; i < 16; i++) {
+        rkBytes[i] = encRk[i] ^ dk[16 + i];
+      }
+      const rkStr = String.fromCharCode(...rkBytes);
+      return (await verifyReadKeyCandidate(rkStr)) ? rkStr : null;
+    }
+
+    // Gera um Código de Liberação criptográfico exclusivo para um endereço de e-mail
+    async function generateApprovalCodeForEmail(emailNorm, readKeyStr) {
+      const mask = await sha256Bytes('CAIXA-APPROVAL-2026:' + emailNorm.trim().toLowerCase());
+      const out = new Uint8Array(16);
+      for (let i = 0; i < 16; i++) {
+        out[i] = readKeyStr.charCodeAt(i) ^ mask[i];
+      }
+      const hex = bufToHex(out).toUpperCase();
+      return `${hex.slice(0,8)}-${hex.slice(8,16)}-${hex.slice(16,24)}-${hex.slice(24,32)}`;
+    }
+
+    // Valida um Código de Liberação para um e-mail específico e extrai a chave do canal
+    async function validateApprovalCodeForEmail(emailNorm, codeStr) {
+      const tokenBytes = hexToBuf(codeStr || '');
+      if (!tokenBytes) return null;
+      const mask = await sha256Bytes('CAIXA-APPROVAL-2026:' + emailNorm.trim().toLowerCase());
+      const rkBytes = new Uint8Array(16);
+      for (let i = 0; i < 16; i++) {
+        rkBytes[i] = tokenBytes[i] ^ mask[i];
+      }
+      const candidate = String.fromCharCode(...rkBytes);
+      return (await verifyReadKeyCandidate(candidate)) ? candidate : null;
     }
 
     function loadVault() {
@@ -284,6 +466,17 @@
       localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(vault));
     }
 
+    function findUserInVault(vault, identifier) {
+      const id = identifier.trim().toLowerCase();
+      if (vault.users[id]) return vault.users[id];
+      for (const k of Object.keys(vault.users)) {
+        if (vault.users[k].email === id || vault.users[k].username === id) {
+          return vault.users[k];
+        }
+      }
+      return null;
+    }
+
     function showAuthAlert(msg, isError = true) {
       const el = document.getElementById('authAlert');
       el.textContent = msg;
@@ -296,9 +489,13 @@
     function switchAuthTab(mode) {
       const loginPanel = document.getElementById('loginPanel');
       const regForm = document.getElementById('registerForm');
+      const pendingPanel = document.getElementById('pendingApprovalPanel');
+      const authTabs = document.getElementById('authTabs');
       const tabLogin = document.getElementById('tabLoginBtn');
       const tabReg = document.getElementById('tabRegisterBtn');
       document.getElementById('authAlert').classList.add('hidden');
+      pendingPanel.classList.add('hidden');
+      authTabs.classList.remove('hidden');
 
       if (mode === 'login') {
         loginPanel.classList.remove('hidden');
@@ -306,7 +503,7 @@
         tabLogin.className = 'py-2 rounded-lg bg-sky-600 text-white transition';
         tabReg.className = 'py-2 rounded-lg text-slate-400 hover:text-white transition';
         refreshBiometricButtonState();
-      } else {
+      } else if (mode === 'register') {
         loginPanel.classList.add('hidden');
         regForm.classList.remove('hidden');
         tabReg.className = 'py-2 rounded-lg bg-emerald-600 text-white transition';
@@ -314,8 +511,47 @@
       }
     }
 
+    function showPendingScreen(userRecord) {
+      pendingUserKey = userRecord.username;
+      document.getElementById('loginPanel').classList.add('hidden');
+      document.getElementById('registerForm').classList.add('hidden');
+      document.getElementById('authTabs').classList.add('hidden');
+      document.getElementById('pendingApprovalPanel').classList.remove('hidden');
+      document.getElementById('pendingEmailLabel').textContent = `${userRecord.username} (${userRecord.email})`;
+
+      const subject = encodeURIComponent(`Liberação de Acesso - Monitor Caixa d'Água (${userRecord.email})`);
+      const body = encodeURIComponent(
+        `Olá Administrador,\n\nSolicito a liberação de acesso ao aplicativo Monitor Caixa d'Água 5.000L.\n\n` +
+        `• Usuário: ${userRecord.username}\n` +
+        `• E-mail cadastrado: ${userRecord.email}\n\n` +
+        `Por favor, gere o Código de Liberação para este e-mail no painel Admin.`
+      );
+      document.getElementById('btnRequestEmail').href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
+    }
+
     document.getElementById('tabLoginBtn').addEventListener('click', () => switchAuthTab('login'));
     document.getElementById('tabRegisterBtn').addEventListener('click', () => switchAuthTab('register'));
+    document.getElementById('btnBackToLogin').addEventListener('click', () => switchAuthTab('login'));
+
+    // Validação do Código de Liberação na tela de pendência
+    document.getElementById('btnActivateCode').addEventListener('click', async () => {
+      const vault = loadVault();
+      const userRecord = vault.users[pendingUserKey];
+      if (!userRecord) return;
+
+      const code = document.getElementById('inputPendingCode').value.trim();
+      const rk = await validateApprovalCodeForEmail(userRecord.email, code);
+      if (!rk) {
+        showAuthAlert('Código de Liberação inválido para o e-mail ' + userRecord.email);
+        return;
+      }
+
+      userRecord.approved = true;
+      userRecord.unlockedRk = rk;
+      saveVault(vault);
+      showAuthAlert('Acesso liberado com sucesso!', false);
+      setTimeout(() => unlockDashboard(userRecord), 500);
+    });
 
     // Registra a Impressão Digital no chip de segurança do Android / Windows Hello via WebAuthn
     async function enrollBiometricForUser(username) {
@@ -329,17 +565,13 @@
         publicKey: {
           challenge,
           rp: { name: "Monitor Caixa d'Água 5000L", id: window.location.hostname || 'localhost' },
-          user: {
-            id: userId,
-            name: username,
-            displayName: username
-          },
+          user: { id: userId, name: username, displayName: username },
           pubKeyCredParams: [
-            { type: 'public-key', alg: -7 },   // ES256
-            { type: 'public-key', alg: -257 }  // RS256
+            { type: 'public-key', alg: -7 },
+            { type: 'public-key', alg: -257 }
           ],
           authenticatorSelection: {
-            authenticatorAttachment: 'platform', // Usa o leitor de digital nativo do Android / aparelho
+            authenticatorAttachment: 'platform',
             userVerification: 'required',
             residentKey: 'preferred'
           },
@@ -360,29 +592,30 @@
     async function authenticateWithBiometrics() {
       const vault = loadVault();
       const username = vault.lastBioUser;
-      if (!username || !vault.users[username] || !vault.users[username].credentialId) {
+      const userRecord = username ? vault.users[username] : null;
+      if (!userRecord || !userRecord.credentialId) {
         showAuthAlert('Cadastre um usuário e ative a impressão digital primeiro.');
+        return;
+      }
+      if (!userRecord.approved || !userRecord.unlockedRk) {
+        showPendingScreen(userRecord);
         return;
       }
 
       try {
         const challenge = crypto.getRandomValues(new Uint8Array(32));
-        const credIdBuf = base64ToBuf(vault.users[username].credentialId);
+        const credIdBuf = base64ToBuf(userRecord.credentialId);
 
         await navigator.credentials.get({
           publicKey: {
             challenge,
-            allowCredentials: [{
-              id: credIdBuf,
-              type: 'public-key',
-              transports: ['internal']
-            }],
+            allowCredentials: [{ id: credIdBuf, type: 'public-key', transports: ['internal'] }],
             userVerification: 'required',
             timeout: 60000
           }
         });
 
-        unlockDashboard(username);
+        unlockDashboard(userRecord);
       } catch (err) {
         console.warn('Biometria cancelada ou falhou:', err);
         showAuthAlert('Leitura da digital não concluída. Tente novamente ou use sua senha.');
@@ -392,13 +625,15 @@
     function refreshBiometricButtonState() {
       const vault = loadVault();
       const bioUser = vault.lastBioUser;
+      const userRecord = bioUser ? vault.users[bioUser] : null;
       const btnBio = document.getElementById('btnBiometricLogin');
       const divBio = document.getElementById('dividerBio');
 
-      if (bioUser && vault.users[bioUser] && vault.users[bioUser].credentialId) {
+      if (userRecord && userRecord.credentialId && userRecord.approved) {
         btnBio.classList.remove('hidden');
         divBio.classList.remove('hidden');
-        document.getElementById('loginUser').value = bioUser;
+        document.getElementById('bioUserSubtitle').textContent = `${userRecord.username} (${userRecord.email})`;
+        document.getElementById('loginId').value = userRecord.email;
       } else {
         btnBio.classList.add('hidden');
         divBio.classList.add('hidden');
@@ -407,12 +642,14 @@
 
     document.getElementById('btnBiometricLogin').addEventListener('click', authenticateWithBiometrics);
 
-    // Cadastro de novo usuário com PBKDF2-SHA256 (100k iterações) + Digital opcional
+    // Cadastro de novo usuário com E-mail + PBKDF2-SHA256 + Verificação de Liberação
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const username = document.getElementById('regUser').value.trim().toLowerCase();
+      const email = document.getElementById('regEmail').value.trim().toLowerCase();
       const pass = document.getElementById('regPass').value;
       const passConfirm = document.getElementById('regPassConfirm').value;
+      const approvalCode = document.getElementById('regApprovalCode').value.trim();
       const wantBio = document.getElementById('regEnableBio').checked;
 
       if (pass !== passConfirm) {
@@ -421,65 +658,200 @@
       }
 
       const salt = crypto.getRandomValues(new Uint8Array(16));
-      const passwordHash = await derivePasswordHash(pass, salt);
+      const dk = await derivePBKDF2Bytes(pass, salt);
+      const passwordHash = bufToBase64(dk);
+
+      // Verifica se é o próprio Administrador Mestre (alexb.ribeiro.abr@gmail.com + senha mestra)
+      let unlockedRk = await tryUnlockAsMasterAdmin(email, pass);
+      let isAdmin = !!unlockedRk;
+
+      // Ou se informou um Código de Liberação válido para este e-mail
+      if (!unlockedRk && approvalCode.length > 0) {
+        unlockedRk = await validateApprovalCodeForEmail(email, approvalCode);
+        if (!unlockedRk) {
+          showAuthAlert('O Código de Liberação informado não é válido para o e-mail ' + email);
+          return;
+        }
+      }
 
       const vault = loadVault();
-      vault.users[username] = {
+      const userRecord = {
+        username,
+        email,
         salt: bufToBase64(salt),
         passwordHash,
+        isAdmin,
+        approved: !!unlockedRk,
+        unlockedRk: unlockedRk || null,
         credentialId: null,
         createdAt: new Date().toISOString()
       };
+      vault.users[username] = userRecord;
       saveVault(vault);
 
       if (wantBio && window.PublicKeyCredential) {
         try {
           await enrollBiometricForUser(username);
-          showAuthAlert('Conta e Impressão Digital cadastradas com sucesso!', false);
         } catch (err) {
           console.warn('Biometria não vinculada no cadastro:', err);
-          showAuthAlert('Conta criada com senha! (Você pode ativar a digital no topo do painel).', false);
         }
-      } else {
-        showAuthAlert('Conta criptografada criada com sucesso!', false);
       }
 
-      setTimeout(() => unlockDashboard(username), 600);
+      if (userRecord.approved) {
+        showAuthAlert(isAdmin ? 'Bem-vindo, Administrador! Conta e acesso liberados.' : 'Conta aprovada e liberada!', false);
+        setTimeout(() => unlockDashboard(vault.users[username]), 500);
+      } else {
+        showPendingScreen(userRecord);
+      }
     });
 
-    // Login por Usuário e Senha
+    // Login por E-mail ou Usuário + Senha
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const username = document.getElementById('loginUser').value.trim().toLowerCase();
+      const identifier = document.getElementById('loginId').value.trim().toLowerCase();
       const pass = document.getElementById('loginPass').value;
 
       const vault = loadVault();
-      const userRecord = vault.users[username];
+      let userRecord = findUserInVault(vault, identifier);
+
+      // Se o Administrador Mestre entrar direto com o e-mail dele mesmo sem ter cadastrado antes no aparelho
+      if (!userRecord && identifier === ADMIN_EMAIL) {
+        const adminRk = await tryUnlockAsMasterAdmin(identifier, pass);
+        if (adminRk) {
+          const salt = crypto.getRandomValues(new Uint8Array(16));
+          const dk = await derivePBKDF2Bytes(pass, salt);
+          userRecord = {
+            username: 'alex',
+            email: ADMIN_EMAIL,
+            salt: bufToBase64(salt),
+            passwordHash: bufToBase64(dk),
+            isAdmin: true,
+            approved: true,
+            unlockedRk: adminRk,
+            credentialId: null,
+            createdAt: new Date().toISOString()
+          };
+          vault.users['alex'] = userRecord;
+          saveVault(vault);
+        }
+      }
+
       if (!userRecord) {
-        showAuthAlert('Usuário não encontrado neste aparelho. Clique em "Cadastrar Conta" acima.');
+        showAuthAlert('Conta não encontrada neste aparelho. Clique em "Cadastrar Conta" acima.');
         return;
       }
 
       const saltBytes = base64ToBuf(userRecord.salt);
-      const computedHash = await derivePasswordHash(pass, saltBytes);
-
-      if (computedHash !== userRecord.passwordHash) {
+      const dk = await derivePBKDF2Bytes(pass, saltBytes);
+      if (bufToBase64(dk) !== userRecord.passwordHash) {
         showAuthAlert('Senha incorreta.');
         return;
       }
 
+      // Se for o e-mail do Admin e ainda não estava aprovado, verifica senha mestra
+      if (!userRecord.approved && userRecord.email === ADMIN_EMAIL) {
+        const adminRk = await tryUnlockAsMasterAdmin(userRecord.email, pass);
+        if (adminRk) {
+          userRecord.isAdmin = true;
+          userRecord.approved = true;
+          userRecord.unlockedRk = adminRk;
+          saveVault(vault);
+        }
+      }
+
       document.getElementById('loginPass').value = '';
-      unlockDashboard(username);
+
+      if (!userRecord.approved || !userRecord.unlockedRk) {
+        showPendingScreen(userRecord);
+        return;
+      }
+
+      unlockDashboard(userRecord);
     });
 
-    function unlockDashboard(username) {
-      currentSessionUser = username;
+    function renderAdminLocalUsers() {
       const vault = loadVault();
-      const hasBio = !!(vault.users[username] && vault.users[username].credentialId);
+      const container = document.getElementById('localUsersList');
+      container.innerHTML = '';
+      const keys = Object.keys(vault.users);
 
-      document.getElementById('loggedUserName').textContent = username;
+      if (keys.length === 0) {
+        container.innerHTML = '<div class="text-slate-500">Nenhuma conta local registrada.</div>';
+        return;
+      }
+
+      keys.forEach((k) => {
+        const u = vault.users[k];
+        const row = document.createElement('div');
+        row.className = 'flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-lg bg-slate-800/80 border border-slate-700';
+        const badgeHtml = u.approved
+          ? '<span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">✅ Liberado</span>'
+          : '<span class="px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800">⏳ Pendente</span>';
+
+        row.innerHTML = `
+          <div>
+            <span class="font-semibold text-white">${u.username}</span>
+            <span class="font-mono text-slate-400 ml-1">(${u.email})</span>
+            <span class="ml-2">${badgeHtml}</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            ${!u.approved ? `<button data-approve="${u.username}" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold">Liberar Agora</button>` : ''}
+            ${!u.isAdmin ? `<button data-revoke="${u.username}" class="px-2.5 py-1 rounded bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800">Bloquear</button>` : ''}
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      container.querySelectorAll('[data-approve]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const uname = btn.getAttribute('data-approve');
+          const v = loadVault();
+          if (v.users[uname] && unlockedReadApiKey) {
+            v.users[uname].approved = true;
+            v.users[uname].unlockedRk = unlockedReadApiKey;
+            saveVault(v);
+            renderAdminLocalUsers();
+          }
+        });
+      });
+
+      container.querySelectorAll('[data-revoke]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const uname = btn.getAttribute('data-revoke');
+          const v = loadVault();
+          if (v.users[uname]) {
+            v.users[uname].approved = false;
+            v.users[uname].unlockedRk = null;
+            saveVault(v);
+            renderAdminLocalUsers();
+          }
+        });
+      });
+    }
+
+    function unlockDashboard(userRecord) {
+      currentSessionUser = userRecord.username;
+      unlockedReadApiKey = userRecord.unlockedRk;
+
+      document.getElementById('loggedUserName').textContent = userRecord.username;
+      document.getElementById('loggedUserEmail').textContent = `(${userRecord.email})`;
+
+      const rolePill = document.getElementById('rolePill');
+      const btnAdminModal = document.getElementById('btnToggleAdminModal');
+      if (userRecord.isAdmin) {
+        rolePill.textContent = '👑 Administrador';
+        rolePill.className = 'px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-700 text-[11px] font-semibold';
+        btnAdminModal.classList.remove('hidden');
+        renderAdminLocalUsers();
+      } else {
+        rolePill.textContent = '✅ Autorizado';
+        rolePill.className = 'px-2 py-0.5 rounded-full bg-sky-950 text-sky-300 border border-sky-800 text-[11px] font-semibold';
+        btnAdminModal.classList.add('hidden');
+        document.getElementById('adminApprovalBox').classList.add('hidden');
+      }
+
       const bioPill = document.getElementById('bioStatusPill');
-      if (hasBio) {
+      if (userRecord.credentialId) {
         bioPill.textContent = '👆 Digital Ativa';
         bioPill.className = 'px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[11px]';
       } else {
@@ -492,8 +864,36 @@
       fetchThingSpeak();
     }
 
+    document.getElementById('btnToggleAdminModal').addEventListener('click', () => {
+      const box = document.getElementById('adminApprovalBox');
+      box.classList.toggle('hidden');
+      renderAdminLocalUsers();
+    });
+    document.getElementById('btnCloseAdminBox').addEventListener('click', () => {
+      document.getElementById('adminApprovalBox').classList.add('hidden');
+    });
+
+    document.getElementById('btnGenerateCode').addEventListener('click', async () => {
+      const targetEmail = document.getElementById('adminTargetEmail').value.trim().toLowerCase();
+      if (!targetEmail || !targetEmail.includes('@')) {
+        alert('Digite um endereço de e-mail válido.');
+        return;
+      }
+      const code = await generateApprovalCodeForEmail(targetEmail, unlockedReadApiKey);
+      document.getElementById('generatedCodeDisplay').textContent = code;
+      document.getElementById('generatedCodeWrap').classList.remove('hidden');
+    });
+
+    document.getElementById('btnCopyCode').addEventListener('click', () => {
+      const code = document.getElementById('generatedCodeDisplay').textContent;
+      if (!code) return;
+      navigator.clipboard.writeText(code);
+      alert('Código de Liberação copiado!');
+    });
+
     document.getElementById('btnLogout').addEventListener('click', () => {
       currentSessionUser = null;
+      unlockedReadApiKey = null;
       document.getElementById('dashboardScreen').classList.add('hidden');
       document.getElementById('authScreen').classList.remove('hidden');
       switchAuthTab('login');
@@ -503,15 +903,16 @@
       if (!currentSessionUser) return;
       try {
         await enrollBiometricForUser(currentSessionUser);
-        unlockDashboard(currentSessionUser);
-        alert('Impressão digital vinculada com sucesso! Na próxima vez você poderá entrar apenas com a digital.');
+        const vault = loadVault();
+        unlockDashboard(vault.users[currentSessionUser]);
+        alert('Impressão digital vinculada com sucesso!');
       } catch (err) {
         alert('Não foi possível cadastrar a digital: ' + err.message);
       }
     });
 
     // ========================================================================
-    // 2. INSTALAÇÃO PWA NO ANDROID (ADD TO HOME SCREEN) & SERVICE WORKER
+    // 2. INSTALAÇÃO PWA NO ANDROID & SERVICE WORKER
     // ========================================================================
     let deferredInstallPrompt = null;
     if ('serviceWorker' in navigator) {
@@ -540,10 +941,7 @@
     // ========================================================================
     // 3. DASHBOARD DA CAIXA D'ÁGUA & DETECÇÃO ONLINE/OFFLINE EM TEMPO REAL
     // ========================================================================
-    const CHANNEL_ID = '3588391';
-    const READ_API_KEY = 'JYLKE4PXYAY521JR';
     const ONLINE_THRESHOLD_SEC = 45;
-
     const H_SENSOR = 1.97;
     const H_MAX_UTIL = 1.45;
     const H_BORDA = 1.63;
@@ -682,9 +1080,9 @@
     document.getElementById('btnRefresh').addEventListener('click', fetchThingSpeak);
 
     async function fetchThingSpeak() {
-      if (!currentSessionUser) return;
+      if (!currentSessionUser || !unlockedReadApiKey) return;
       try {
-        const url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds/last.json?api_key=${READ_API_KEY}&_t=${Date.now()}`;
+        const url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds/last.json?api_key=${unlockedReadApiKey}&_t=${Date.now()}`;
         const res = await fetch(url, { cache: 'no-store' });
         const data = await res.json();
 
@@ -823,14 +1221,7 @@
       requestAnimationFrame(drawTank);
     }
 
-    // Inicialização: se não houver nenhum usuário cadastrado neste aparelho, abre direto na aba Cadastrar Conta
-    const initialVault = loadVault();
-    if (Object.keys(initialVault.users).length === 0) {
-      switchAuthTab('register');
-    } else {
-      switchAuthTab('login');
-    }
-
+    switchAuthTab('login');
     setInterval(fetchThingSpeak, 10000);
     setInterval(updateConnectionStatusUI, 1000);
     drawTank();
