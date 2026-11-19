@@ -1,6 +1,6 @@
-# Monitor de Caixa d'Água (ESP32-S3 + JSN-SR04T + Energia Solar)
+# Monitor de Caixa d'Água (ESP32-S3 + JSN-SR04T + Energia Solar + Home Assistant)
 
-Sistema de monitoramento de nível de caixa d'água (**Fortlev 5.000 L**, formato tronco de cone) alimentado por energia solar e baterias 18650, com envio de dados para **ThingSpeak** e alertas via **Telegram**.
+Sistema de monitoramento de nível de caixa d'água (**Fortlev 5.000 L**, formato tronco de cone) alimentado por energia solar e baterias 18650, com integração direta via API ao **Home Assistant (ZimaOS)**, além de suporte opcional a **Telegram** e **ThingSpeak**.
 
 ## Lista Exata de Componentes
 
@@ -55,7 +55,33 @@ flowchart LR
 
 ---
 
-## 3. Geometria da Caixa d'Água (Fortlev 5.000 L, tronco de cone)
+## 3. Integração com o Home Assistant (ZimaOS)
+
+O firmware envia os dados diretamente para a **REST API do Home Assistant** (`POST /api/states/<entity_id>`), funcionando tanto via **HTTPS remoto** (ex.: Cloudflare Tunnel, DuckDNS, Nabu Casa — ideal para testar fora de casa) quanto via **HTTP local** (`http://IP_DO_ZIMAOS:8123`).
+
+### Passo a passo no Home Assistant:
+1. Abra o seu **Home Assistant** e clique no seu **Perfil de Usuário** (canto inferior esquerdo).
+2. Vá na aba **Segurança** (Security), role até o final em **Tokens de Acesso de Longa Duração** (*Long-Lived Access Tokens*) e clique em **Criar Token**.
+3. Dê o nome `ESP32 Caixa d'Agua` e copie o token gerado.
+4. No arquivo `config.h`, preencha:
+   ```cpp
+   #define USE_HOME_ASSISTANT  true
+   #define HA_BASE_URL         "https://seu-endereco-remoto-ou-ip:8123"
+   #define HA_TOKEN            "SEU_TOKEN_COPIADO_AQUI"
+   ```
+
+### Entidades criadas automaticamente no Home Assistant:
+Assim que o ESP32-S3 fizer a primeira leitura, estas 6 entidades aparecerão em **Ferramentas de Desenvolvedor → Estados** (prontas para colocar no seu painel Lovelace):
+* `sensor.caixa_dagua_nivel` — Nível da água em `%`
+* `sensor.caixa_dagua_volume` — Volume estimado em `L`
+* `sensor.caixa_dagua_altura_agua` — Altura da coluna d'água em `cm`
+* `sensor.caixa_dagua_distancia_sensor` — Distância medida pelo JSN-SR04T em `cm`
+* `sensor.caixa_dagua_temp_esp32` — Temperatura interna do chip ESP32-S3 em `°C`
+* `sensor.caixa_dagua_wifi_rssi` — Intensidade do sinal Wi-Fi em `dBm`
+
+---
+
+## 4. Geometria da Caixa d'Água (Fortlev 5.000 L, tronco de cone)
 
 ```text
              ___________  ← topo da tampa: 2,00 m  ← SENSOR AQUI (centro da tampa)
@@ -87,14 +113,3 @@ flowchart LR
 | 1,30 m | 4.336 | 88% |
 | 1,40 m | 4.745 | 96% |
 | 1,45 m | 4.953 | 100% |
-
----
-
-## 4. Como Compilar e Gravar
-
-1. Copie `firmware/monitor_caixa_dagua/config.example.h` para `firmware/monitor_caixa_dagua/config.h` e preencha:
-   * `WIFI_SSID` e `WIFI_PASSWORD`
-   * `TELEGRAM_BOT_TOKEN` e `TELEGRAM_CHAT_ID`
-   * `THINGSPEAK_API_KEY`
-2. **PlatformIO:** abra a pasta do projeto e clique em **Upload**.
-3. **Arduino IDE:** abra `firmware/monitor_caixa_dagua/monitor_caixa_dagua.ino`, selecione a placa **ESP32S3 Dev Module** e instale as bibliotecas `UniversalTelegramBot` e `ArduinoJson`.

@@ -1,5 +1,5 @@
 /**
- * Monitor de Caixa d'Água (5.000L Fortlev) com Energia Solar
+ * Monitor de Caixa d'Água (5.000L Fortlev) com Energia Solar + Home Assistant (ZimaOS)
  *
  * Lista exata de hardware utilizado:
  * - Microcontrolador: ESP32-S3 com antena externa
@@ -99,7 +99,86 @@ float medirDistanciaMetros() {
 }
 
 // ============================================================================
-// ENVIO PARA THINGSPEAK (HISTÓRICO E GRÁFICOS WEB)
+// ENVIO DIRETO PARA O HOME ASSISTANT (REST API - HTTP LOCAL OU HTTPS REMOTO)
+// ============================================================================
+bool publicarEntidadeHA(const char* entityId, const String& stateValue,
+                        const char* friendlyName, const char* unit,
+                        const char* deviceClass, const char* icon) {
+  String url = String(HA_BASE_URL) + "/api/states/" + entityId;
+
+  String payload = "{\"state\":\"" + stateValue + "\",\"attributes\":{";
+  payload += "\"friendly_name\":\"" + String(friendlyName) + "\",";
+  payload += "\"unit_of_measurement\":\"" + String(unit) + "\",";
+  payload += "\"state_class\":\"measurement\",";
+  if (deviceClass && strlen(deviceClass) > 0) {
+    payload += "\"device_class\":\"" + String(deviceClass) + "\",";
+  }
+  payload += "\"icon\":\"" + String(icon) + "\"}}";
+
+  HTTPClient http;
+  WiFiClientSecure secureClient;
+
+  if (url.startsWith("https://")) {
+    secureClient.setInsecure(); // Aceita certificado SSL de Cloudflare Tunnel / DuckDNS / Nabu Casa
+    http.begin(secureClient, url);
+  } else {
+    http.begin(url);
+  }
+
+  http.addHeader("Authorization", String("Bearer ") + HA_TOKEN);
+  http.addHeader("Content-Type", "application/json");
+
+  int code = http.POST(payload);
+  http.end();
+
+  if (code == 200 || code == 201) {
+    return true;
+  } else {
+    Serial.printf("[Home Assistant] Erro HTTP %d ao publicar %s\n", code, entityId);
+    return false;
+  }
+}
+
+void enviarHomeAssistant(const Medicao &m) {
+  if (!USE_HOME_ASSISTANT || String(HA_TOKEN) == "SEU_LONG_LIVED_ACCESS_TOKEN_AQUI") return;
+
+  Serial.println("[Home Assistant] Enviando leituras...");
+
+  if (m.distanciaM > 0) {
+    publicarEntidadeHA("sensor.caixa_dagua_nivel",
+                       String(m.nivelPct, 1),
+                       "Caixa d'Água - Nível", "%", "", "mdi:storage-tank");
+
+    publicarEntidadeHA("sensor.caixa_dagua_volume",
+                       String(m.volumeLitros, 0),
+                       "Caixa d'Água - Volume", "L", "volume_storage", "mdi:water");
+
+    publicarEntidadeHA("sensor.caixa_dagua_altura_agua",
+                       String(m.alturaAguaM * 100.0f, 1),
+                       "Caixa d'Água - Altura da Água", "cm", "distance", "mdi:arrow-expand-vertical");
+
+    publicarEntidadeHA("sensor.caixa_dagua_distancia_sensor",
+                       String(m.distanciaM * 100.0f, 1),
+                       "Caixa d'Água - Distância Sensor", "cm", "distance", "mdi:ruler");
+  } else {
+    publicarEntidadeHA("sensor.caixa_dagua_nivel",
+                       "unavailable",
+                       "Caixa d'Água - Nível", "%", "", "mdi:alert-circle");
+  }
+
+  publicarEntidadeHA("sensor.caixa_dagua_temp_esp32",
+                     String(m.tempInternaEspC, 1),
+                     "Caixa d'Água - Temp. ESP32-S3", "°C", "temperature", "mdi:thermometer");
+
+  publicarEntidadeHA("sensor.caixa_dagua_wifi_rssi",
+                     String(m.rssi),
+                     "Caixa d'Água - Sinal Wi-Fi", "dBm", "signal_strength", "mdi:wifi");
+
+  Serial.println("[Home Assistant] Leituras atualizadas com sucesso!");
+}
+
+// ============================================================================
+// ENVIO PARA THINGSPEAK (OPCIONAL)
 // ============================================================================
 void enviarThingSpeak(const Medicao &m) {
   if (!USE_THINGSPEAK || String(THINGSPEAK_API_KEY) == "SUA_WRITE_API_KEY") return;
@@ -120,7 +199,7 @@ void enviarThingSpeak(const Medicao &m) {
 }
 
 // ============================================================================
-// ALERTAS E STATUS PERIÓDICO VIA TELEGRAM
+// ALERTAS E STATUS PERIÓDICO VIA TELEGRAM (OPCIONAL)
 // ============================================================================
 void processarTelegram(const Medicao &m) {
   if (!USE_TELEGRAM || String(TELEGRAM_BOT_TOKEN).startsWith("0000")) return;
@@ -130,7 +209,6 @@ void processarTelegram(const Medicao &m) {
   if (m.distanciaM < 0) {
     msg += "⚠️ *Falha na leitura do sensor JSN-SR04T* (verifique conexões ou zona cega).\n";
   } else {
-    // Alerta de nível baixo (com histerese de 5%)
     if (m.nivelPct <= ALERTA_NIVEL_BAIXO_PCT && !alertaNivelBaixoEnv) {
       msg += "🚰 *ALERTA DE NÍVEL BAIXO:* " + String(m.nivelPct, 1) + "% (" + String(m.volumeLitros, 0) + " L)\n";
       alertaNivelBaixoEnv = true;
@@ -138,7 +216,6 @@ void processarTelegram(const Medicao &m) {
       alertaNivelBaixoEnv = false;
     }
 
-    // Alerta de nível acima do máximo / falha na boia
     if (m.nivelPct >= ALERTA_NIVEL_ALTO_PCT && !alertaNivelAltoEnv) {
       msg += "🌊 *ALERTA DE NÍVEL ACIMA DO MÁXIMO (verifique a boia):* " +
              String(m.nivelPct, 1) + "% (" + String(m.volumeLitros, 0) + " L)\n";
@@ -148,7 +225,6 @@ void processarTelegram(const Medicao &m) {
     }
   }
 
-  // Alerta de temperatura interna elevada usando o sensor nativo do chip ESP32-S3
   if (m.tempInternaEspC >= ALERTA_TEMP_CHIP_C && !alertaTempAltaEnv) {
     msg += "🌡️ *Temperatura interna do ESP32-S3 elevada:* " + String(m.tempInternaEspC, 1) + " °C\n";
     alertaTempAltaEnv = true;
@@ -156,7 +232,6 @@ void processarTelegram(const Medicao &m) {
     alertaTempAltaEnv = false;
   }
 
-  // Envio periódico de status (ex.: no primeiro boot ou a cada N ciclos)
   bool enviarPeriodico = (bootCount == 1) ||
                          (TELEGRAM_STATUS_A_CADA_N_CICLOS > 0 && (bootCount % TELEGRAM_STATUS_A_CADA_N_CICLOS == 0));
 
@@ -224,6 +299,7 @@ void setup() {
 
     if (WiFi.status() == WL_CONNECTED) {
       m.rssi = WiFi.RSSI();
+      enviarHomeAssistant(m);
       enviarThingSpeak(m);
       processarTelegram(m);
       WiFi.disconnect(true);
