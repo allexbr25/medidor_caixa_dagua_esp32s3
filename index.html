@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monitor Caixa d'Água 5.000L — ESP32-S3</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-4 md:p-8 font-sans">
+  <div class="max-w-4xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 md:p-5 shadow-lg">
+      <div class="flex items-center gap-3">
+        <span id="statusDot" class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+        <div>
+          <h1 class="text-lg md:text-xl font-bold tracking-tight">Caixa d'Água Fortlev 5.000 L</h1>
+          <p id="subStatus" class="text-xs text-slate-400">ESP32-S3 + JSN-SR04T • Sincronizado com ThingSpeak #3588391</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 text-xs">
+        <label class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+          <input id="chkSim" type="checkbox" class="accent-sky-400" />
+          <span>Modo Simulador</span>
+        </label>
+        <input id="sliderAltura" type="range" min="0" max="155" value="116" class="accent-sky-400 w-32 cursor-pointer hidden" />
+        <button id="btnRefresh" class="bg-sky-600 hover:bg-sky-500 text-white font-medium px-3 py-1.5 rounded-lg transition">
+          Atualizar
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Dashboard Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl">
+      <!-- Animated Tank (5 cols) -->
+      <div class="md:col-span-5 flex flex-col items-center">
+        <canvas id="tankCanvas" width="280" height="270" class="w-full max-w-[280px]"></canvas>
+        <p id="sensorAlert" class="text-xs text-amber-400 mt-2 text-center hidden">
+          Sensor JSN-SR04T aguardando solda (exibindo simulação visual — Temp. e Wi-Fi reais do ESP32-S3!)
+        </p>
+      </div>
+
+      <!-- Telemetry Cards (7 cols) -->
+      <div class="md:col-span-7 grid grid-cols-2 gap-3.5">
+        <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
+          <div class="text-xs text-slate-400">Nível da Caixa</div>
+          <div id="valPct" class="text-3xl font-bold font-mono text-sky-400 mt-1">--%</div>
+          <div id="valBadge" class="text-xs text-emerald-400 mt-1 font-medium">Aguardando...</div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
+          <div class="text-xs text-slate-400">Volume Estimado</div>
+          <div id="valLitros" class="text-3xl font-bold font-mono text-white mt-1">-- L</div>
+          <div class="text-xs text-slate-400 mt-1">Capacidade útil: 4.953 L</div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
+          <div class="text-xs text-slate-400">Altura da Água</div>
+          <div id="valAltura" class="text-xl font-semibold font-mono mt-1">-- cm</div>
+          <div class="text-xs text-slate-400 mt-1">Boia / Entrada: 145 cm</div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
+          <div class="text-xs text-slate-400">Distância Sensor</div>
+          <div id="valDist" class="text-xl font-semibold font-mono mt-1">-- cm</div>
+          <div class="text-xs text-slate-400 mt-1">Topo da tampa: 197 cm</div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
+          <div class="text-xs text-slate-400">Temp. Chip ESP32-S3</div>
+          <div id="valTemp" class="text-xl font-semibold font-mono text-amber-300 mt-1">-- °C</div>
+          <div class="text-xs text-slate-400 mt-1">Sensor interno nativo</div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
+          <div class="text-xs text-slate-400">Sinal Wi-Fi (RSSI)</div>
+          <div id="valRssi" class="text-xl font-semibold font-mono text-emerald-300 mt-1">-- dBm</div>
+          <div id="valTime" class="text-xs text-slate-400 mt-1">Última leitura: --</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CHANNEL_ID = '3588391';
+    const READ_API_KEY = 'JYLKE4PXYAY521JR';
+
+    const H_SENSOR = 1.97;
+    const H_MAX_UTIL = 1.45;
+    const H_BORDA = 1.63;
+    const R_BASE = 0.925;
+    const R_TOPO = 1.185;
+
+    function calcLitros(h) {
+      if (h <= 0) return 0;
+      const hc = Math.min(h, H_BORDA);
+      const k = (R_TOPO - R_BASE) / H_BORDA;
+      const r = R_BASE + k * hc;
+      return (Math.PI * hc / 3.0) * (R_BASE * R_BASE + R_BASE * r + r * r) * 1000.0;
+    }
+
+    const VOL_MAX = calcLitros(H_MAX_UTIL);
+    const canvas = document.getElementById('tankCanvas');
+    const ctx = canvas.getContext('2d');
+    const chkSim = document.getElementById('chkSim');
+    const slider = document.getElementById('sliderAltura');
+
+    let currentHeightM = 1.16;
+    let targetHeightM = 1.16;
+    let phase = 0;
+
+    function renderNumbers(pct, litros, hCm, dCm, tempC, rssi, timestampText) {
+      document.getElementById('valPct').textContent = pct.toFixed(1) + '%';
+      document.getElementById('valLitros').textContent = Math.round(litros).toLocaleString('pt-BR') + ' L';
+      document.getElementById('valAltura').textContent = hCm.toFixed(0) + ' cm';
+      document.getElementById('valDist').textContent = dCm.toFixed(1) + ' cm';
+      if (tempC !== null && !isNaN(tempC)) {
+        document.getElementById('valTemp').textContent = tempC.toFixed(1) + ' °C';
+      }
+      if (rssi !== null && !isNaN(rssi)) {
+        document.getElementById('valRssi').textContent = rssi + ' dBm';
+      }
+      if (timestampText) {
+        document.getElementById('valTime').textContent = 'Última: ' + timestampText;
+      }
+
+      const badge = document.getElementById('valBadge');
+      if (pct <= 25) {
+        badge.textContent = '⚠️ Alerta: Nível Baixo!';
+        badge.className = 'text-xs text-rose-400 mt-1 font-medium';
+      } else if (pct > 101) {
+        badge.textContent = '🌊 Alerta: Acima da Boia!';
+        badge.className = 'text-xs text-amber-400 mt-1 font-medium';
+      } else {
+        badge.textContent = '✅ Nível Normal';
+        badge.className = 'text-xs text-emerald-400 mt-1 font-medium';
+      }
+    }
+
+    function applySimSlider() {
+      const hCm = parseFloat(slider.value);
+      const hM = hCm / 100.0;
+      targetHeightM = hM;
+      const dCm = (H_SENSOR - hM) * 100.0;
+      const litros = calcLitros(hM);
+      const pct = (litros / VOL_MAX) * 100.0;
+      renderNumbers(pct, litros, hCm, dCm, null, null, 'Simulador manual');
+    }
+
+    chkSim.addEventListener('change', () => {
+      if (chkSim.checked) {
+        slider.classList.remove('hidden');
+        applySimSlider();
+      } else {
+        slider.classList.add('hidden');
+        fetchThingSpeak();
+      }
+    });
+
+    slider.addEventListener('input', applySimSlider);
+    document.getElementById('btnRefresh').addEventListener('click', fetchThingSpeak);
+
+    async function fetchThingSpeak() {
+      try {
+        const url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds/last.json?api_key=${READ_API_KEY}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        const pct = parseFloat(data.field1);
+        const litros = parseFloat(data.field2);
+        const distCm = parseFloat(data.field3);
+        const altCm = parseFloat(data.field4);
+        const tempC = parseFloat(data.field5);
+        const rssi = parseInt(data.field6, 10);
+        const dt = data.created_at ? new Date(data.created_at).toLocaleTimeString('pt-BR') : '--';
+
+        if (!chkSim.checked) {
+          if (pct >= 0 && altCm >= 0) {
+            document.getElementById('sensorAlert').classList.add('hidden');
+            targetHeightM = altCm / 100.0;
+            renderNumbers(pct, litros, altCm, distCm, tempC, rssi, dt);
+          } else {
+            // Sensor ultrasonic not soldered yet (-1): show real ESP32 Temp & Wi-Fi + simulated water animation
+            document.getElementById('sensorAlert').classList.remove('hidden');
+            chkSim.checked = true;
+            slider.classList.remove('hidden');
+            const hCm = parseFloat(slider.value);
+            const hM = hCm / 100.0;
+            targetHeightM = hM;
+            renderNumbers((calcLitros(hM) / VOL_MAX) * 100, calcLitros(hM), hCm, (H_SENSOR - hM) * 100, tempC, rssi, dt);
+          }
+        }
+      } catch (e) {
+        console.error('Erro ao buscar ThingSpeak:', e);
+      }
+    }
+
+    function drawTank() {
+      currentHeightM += (targetHeightM - currentHeightM) * 0.08;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const topY = 56;
+      const botY = 242;
+      const tankH = botY - topY;
+      const cx = 140;
+      const topHalfW = 104;
+      const botHalfW = 80;
+
+      const ratio = Math.min(Math.max(currentHeightM / H_BORDA, 0), 1);
+      const waterY = botY - ratio * tankH;
+
+      // Clip frustum shape
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(cx - topHalfW, topY);
+      ctx.lineTo(cx + topHalfW, topY);
+      ctx.lineTo(cx + botHalfW, botY);
+      ctx.lineTo(cx - botHalfW, botY);
+      ctx.closePath();
+      ctx.clip();
+
+      ctx.fillStyle = 'rgba(30, 41, 59, 0.55)';
+      ctx.fillRect(0, topY, canvas.width, tankH);
+
+      if (ratio > 0.005) {
+        // Back wave
+        ctx.beginPath();
+        for (let x = cx - topHalfW - 15; x <= cx + topHalfW + 15; x += 4) {
+          const y = waterY + Math.sin((x * 0.04) + phase) * 4.5;
+          if (x === cx - topHalfW - 15) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.lineTo(cx + topHalfW + 15, botY + 15);
+        ctx.lineTo(cx - topHalfW - 15, botY + 15);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(14, 165, 233, 0.45)';
+        ctx.fill();
+
+        // Front wave
+        ctx.beginPath();
+        for (let x = cx - topHalfW - 15; x <= cx + topHalfW + 15; x += 4) {
+          const y = waterY + Math.cos((x * 0.035) - phase * 1.25) * 4.5 + 2;
+          if (x === cx - topHalfW - 15) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.lineTo(cx + topHalfW + 15, botY + 15);
+        ctx.lineTo(cx - topHalfW - 15, botY + 15);
+        ctx.closePath();
+        const grad = ctx.createLinearGradient(0, waterY, 0, botY);
+        grad.addColorStop(0, 'rgba(56, 189, 248, 0.9)');
+        grad.addColorStop(1, 'rgba(3, 105, 161, 0.95)');
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+
+      // Max useful level dashed line
+      const maxY = botY - (H_MAX_UTIL / H_BORDA) * tankH;
+      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.6)';
+      ctx.beginPath();
+      ctx.moveTo(cx - topHalfW, maxY);
+      ctx.lineTo(cx + topHalfW, maxY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+
+      // Tank walls
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx - topHalfW, topY);
+      ctx.lineTo(cx + topHalfW, topY);
+      ctx.lineTo(cx + botHalfW, botY);
+      ctx.lineTo(cx - botHalfW, botY);
+      ctx.closePath();
+      ctx.stroke();
+
+      // Fortlev raised lid
+      ctx.beginPath();
+      ctx.moveTo(cx - topHalfW - 6, topY);
+      ctx.quadraticCurveTo(cx, topY - 44, cx + topHalfW + 6, topY);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(51, 65, 85, 0.5)';
+      ctx.fill();
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // Ultrasonic transducer
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(cx - 12, topY - 27, 24, 9);
+
+      // Ultrasonic cone rays
+      ctx.setLineDash([3, 4]);
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(cx, topY - 18);
+      ctx.lineTo(cx - 22, waterY);
+      ctx.moveTo(cx, topY - 18);
+      ctx.lineTo(cx + 22, waterY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      phase += 0.055;
+      requestAnimationFrame(drawTank);
+    }
+
+    fetchThingSpeak();
+    setInterval(fetchThingSpeak, 30000);
+    drawTank();
+  </script>
+</body>
+</html>
