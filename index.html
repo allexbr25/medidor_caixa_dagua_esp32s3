@@ -2,107 +2,546 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Monitor Caixa d'Água 5.000L — ESP32-S3</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0284c7" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="./manifest.json" />
+  <title>Monitor Caixa d'Água 5.000L — App Seguro</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen p-4 md:p-8 font-sans">
-  <div class="max-w-4xl mx-auto space-y-6">
-    <!-- Header -->
-    <div id="headerCard" class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 md:p-5 shadow-lg transition-colors">
-      <div class="flex items-center gap-3">
-        <span id="statusDot" class="w-3.5 h-3.5 rounded-full bg-slate-500"></span>
-        <div>
-          <div class="flex items-center gap-2.5">
-            <h1 class="text-lg md:text-xl font-bold tracking-tight">Caixa d'Água Fortlev 5.000 L</h1>
-            <span id="connBadge" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-              Verificando...
-            </span>
-          </div>
-          <p id="subStatus" class="text-xs text-slate-400 mt-0.5">Consultando último pacote do ESP32-S3 no ThingSpeak #3588391...</p>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans select-none">
+
+  <!-- ====================================================================== -->
+  <!-- TELA DE AUTENTICAÇÃO (LOGIN / CADASTRO / LEITOR DE DIGITAL BIOMÉTRICO) -->
+  <!-- ====================================================================== -->
+  <div id="authScreen" class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-slate-900/95 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
+      <!-- App Icon & Title -->
+      <div class="text-center space-y-2">
+        <div class="w-16 h-16 mx-auto rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-3xl shadow-inner">
+          💧
         </div>
+        <h1 class="text-xl font-bold tracking-tight">Caixa d'Água Fortlev 5.000 L</h1>
+        <p class="text-xs text-slate-400">Acesso protegido por Criptografia PBKDF2/AES-256 &amp; Biometria</p>
       </div>
 
-      <div class="flex items-center gap-3 text-xs">
-        <label class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 cursor-pointer">
-          <input id="chkSim" type="checkbox" class="accent-sky-400" />
-          <span>Simular Nível</span>
-        </label>
-        <input id="sliderAltura" type="range" min="0" max="155" value="116" class="accent-sky-400 w-32 cursor-pointer hidden" />
-        <button id="btnRefresh" class="bg-sky-600 hover:bg-sky-500 text-white font-medium px-3 py-1.5 rounded-lg transition">
-          Atualizar Agora
+      <!-- Tabs: Entrar / Cadastrar -->
+      <div class="grid grid-cols-2 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 text-xs font-semibold">
+        <button id="tabLoginBtn" class="py-2 rounded-lg bg-sky-600 text-white transition">
+          🔐 Entrar
+        </button>
+        <button id="tabRegisterBtn" class="py-2 rounded-lg text-slate-400 hover:text-white transition">
+          ➕ Cadastrar Conta
         </button>
       </div>
-    </div>
 
-    <!-- Offline Banner -->
-    <div id="offlineBanner" class="hidden bg-rose-950/70 border border-rose-700/80 text-rose-200 rounded-xl px-4 py-3 text-xs flex items-center justify-between">
-      <div class="flex items-center gap-2.5">
-        <span class="text-base">🔌</span>
+      <!-- Alert Message -->
+      <div id="authAlert" class="hidden rounded-xl px-3.5 py-2.5 text-xs font-medium border"></div>
+
+      <!-- FORMULÁRIO DE LOGIN -->
+      <div id="loginPanel" class="space-y-4">
+        <!-- Botão Principal de Impressão Digital (aparece em destaque se cadastrada) -->
+        <button id="btnBiometricLogin" type="button"
+          class="hidden w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold text-sm shadow-lg shadow-emerald-950/60 flex items-center justify-center gap-3 border border-emerald-400/30 transition active:scale-[0.99]">
+          <span class="text-2xl">👆</span>
+          <div class="text-left">
+            <div class="leading-tight">Entrar com Impressão Digital</div>
+            <div class="text-[11px] text-emerald-100/80 font-normal">Autenticação biométrica do dispositivo</div>
+          </div>
+        </button>
+
+        <div id="dividerBio" class="hidden flex items-center gap-3 text-[11px] text-slate-500">
+          <div class="h-px bg-slate-800 flex-1"></div>
+          <span>ou acesse com usuário e senha</span>
+          <div class="h-px bg-slate-800 flex-1"></div>
+        </div>
+
+        <form id="loginForm" class="space-y-3.5">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Usuário</label>
+            <input id="loginUser" type="text" autocomplete="username" required
+              placeholder="Digite seu usuário"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-sm focus:outline-none focus:border-sky-400" />
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Senha</label>
+            <input id="loginPass" type="password" autocomplete="current-password" required
+              placeholder="••••••••"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-sm focus:outline-none focus:border-sky-400" />
+          </div>
+          <button type="submit"
+            class="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm shadow-lg transition">
+            Desbloquear Painel
+          </button>
+        </form>
+      </div>
+
+      <!-- FORMULÁRIO DE CADASTRO SEGURO -->
+      <form id="registerForm" class="hidden space-y-3.5">
         <div>
-          <span class="font-semibold text-rose-100">ESP32-S3 Offline ou em Deep Sleep:</span>
-          <span id="offlineReason">nenhum pacote recebido nos últimos 45 segundos.</span>
+          <label class="block text-xs text-slate-400 mb-1">Novo Usuário</label>
+          <input id="regUser" type="text" autocomplete="username" required minlength="3"
+            placeholder="Ex: alex"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-sm focus:outline-none focus:border-sky-400" />
         </div>
-      </div>
-      <span id="offlineElapsed" class="font-mono font-semibold text-rose-300">--</span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Senha (mín. 6 dígitos)</label>
+            <input id="regPass" type="password" autocomplete="new-password" required minlength="6"
+              placeholder="••••••••"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-sm focus:outline-none focus:border-sky-400" />
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Confirmar Senha</label>
+            <input id="regPassConfirm" type="password" autocomplete="new-password" required minlength="6"
+              placeholder="••••••••"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-sm focus:outline-none focus:border-sky-400" />
+          </div>
+        </div>
+
+        <label class="flex items-center gap-2.5 p-3 rounded-xl bg-emerald-950/40 border border-emerald-800/60 cursor-pointer text-xs">
+          <input id="regEnableBio" type="checkbox" checked class="accent-emerald-400 w-4 h-4" />
+          <div>
+            <div class="font-semibold text-emerald-300">👆 Cadastrar Impressão Digital agora</div>
+            <div class="text-[11px] text-slate-400">Vincula o leitor biométrico do Android/dispositivo à sua conta</div>
+          </div>
+        </label>
+
+        <button type="submit"
+          class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm shadow-lg transition">
+          Criar Conta Criptografada
+        </button>
+      </form>
+
+      <!-- Botão de Instalação PWA Android -->
+      <button id="btnInstallPwaAuth" type="button"
+        class="hidden w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30 text-xs font-medium flex items-center justify-center gap-2 transition">
+        <span>📲</span>
+        <span>Instalar Aplicativo no Android</span>
+      </button>
     </div>
+  </div>
 
-    <!-- Main Dashboard Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl">
-      <!-- Animated Tank (5 cols) -->
-      <div class="md:col-span-5 flex flex-col items-center">
-        <canvas id="tankCanvas" width="280" height="270" class="w-full max-w-[280px]"></canvas>
-        <p id="sensorAlert" class="text-xs text-amber-400 mt-2 text-center hidden">
-          Sensor JSN-SR04T desconectado (use "Simular Nível" acima para testar a animação da água)
-        </p>
+  <!-- ====================================================================== -->
+  <!-- PAINEL PRINCIPAL (EXIBIDO APENAS APÓS AUTENTICAÇÃO)                    -->
+  <!-- ====================================================================== -->
+  <div id="dashboardScreen" class="hidden p-4 md:p-8">
+    <div class="max-w-4xl mx-auto space-y-5">
+      <!-- Top Security & User Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-900/70 border border-slate-800/90 rounded-xl px-4 py-2.5 text-xs">
+        <div class="flex items-center gap-2 text-slate-300">
+          <span>👤 Usuário autenticado:</span>
+          <span id="loggedUserName" class="font-semibold text-sky-400">--</span>
+          <span id="bioStatusPill" class="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[11px]">
+            👆 Digital Ativa
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnEnrollBioInApp" type="button"
+            class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 transition">
+            👆 Configurar Digital
+          </button>
+          <button id="btnInstallPwaDash" type="button"
+            class="hidden px-2.5 py-1 rounded-lg bg-sky-950 hover:bg-sky-900 text-sky-300 border border-sky-800 transition">
+            📲 Instalar App
+          </button>
+          <button id="btnLogout" type="button"
+            class="px-2.5 py-1 rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800/70 transition">
+            🔒 Bloquear
+          </button>
+        </div>
       </div>
 
-      <!-- Telemetry Cards (7 cols) -->
-      <div class="md:col-span-7 grid grid-cols-2 gap-3.5">
-        <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
-          <div class="text-xs text-slate-400">Nível da Caixa</div>
-          <div id="valPct" class="text-3xl font-bold font-mono text-sky-400 mt-1">--%</div>
-          <div id="valBadge" class="text-xs text-slate-400 mt-1 font-medium">Aguardando...</div>
+      <!-- Header -->
+      <div id="headerCard" class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-4 md:p-5 shadow-lg transition-colors">
+        <div class="flex items-center gap-3">
+          <span id="statusDot" class="w-3.5 h-3.5 rounded-full bg-slate-500"></span>
+          <div>
+            <div class="flex items-center gap-2.5">
+              <h1 class="text-lg md:text-xl font-bold tracking-tight">Caixa d'Água Fortlev 5.000 L</h1>
+              <span id="connBadge" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                Verificando...
+              </span>
+            </div>
+            <p id="subStatus" class="text-xs text-slate-400 mt-0.5">Consultando último pacote do ESP32-S3 no ThingSpeak #3588391...</p>
+          </div>
         </div>
 
-        <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
-          <div class="text-xs text-slate-400">Volume Estimado</div>
-          <div id="valLitros" class="text-3xl font-bold font-mono text-white mt-1">-- L</div>
-          <div class="text-xs text-slate-400 mt-1">Capacidade útil: 4.953 L</div>
+        <div class="flex items-center gap-3 text-xs">
+          <label class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 cursor-pointer">
+            <input id="chkSim" type="checkbox" class="accent-sky-400" />
+            <span>Simular Nível</span>
+          </label>
+          <input id="sliderAltura" type="range" min="0" max="155" value="116" class="accent-sky-400 w-28 md:w-32 cursor-pointer hidden" />
+          <button id="btnRefresh" class="bg-sky-600 hover:bg-sky-500 text-white font-medium px-3 py-1.5 rounded-lg transition">
+            Atualizar
+          </button>
+        </div>
+      </div>
+
+      <!-- Offline Banner -->
+      <div id="offlineBanner" class="hidden bg-rose-950/70 border border-rose-700/80 text-rose-200 rounded-xl px-4 py-3 text-xs flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="text-base">🔌</span>
+          <div>
+            <span class="font-semibold text-rose-100">ESP32-S3 Offline ou em Deep Sleep:</span>
+            <span>nenhum pacote recebido nos últimos 45 segundos.</span>
+          </div>
+        </div>
+        <span id="offlineElapsed" class="font-mono font-semibold text-rose-300">--</span>
+      </div>
+
+      <!-- Main Dashboard Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center bg-slate-900/70 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <!-- Animated Tank (5 cols) -->
+        <div class="md:col-span-5 flex flex-col items-center">
+          <canvas id="tankCanvas" width="280" height="270" class="w-full max-w-[280px]"></canvas>
+          <p id="sensorAlert" class="text-xs text-amber-400 mt-2 text-center hidden">
+            Sensor JSN-SR04T desconectado (use "Simular Nível" acima para testar a animação da água)
+          </p>
         </div>
 
-        <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
-          <div class="text-xs text-slate-400">Altura da Água</div>
-          <div id="valAltura" class="text-xl font-semibold font-mono mt-1">-- cm</div>
-          <div class="text-xs text-slate-400 mt-1">Boia / Entrada: 145 cm</div>
-        </div>
+        <!-- Telemetry Cards (7 cols) -->
+        <div class="md:col-span-7 grid grid-cols-2 gap-3.5">
+          <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
+            <div class="text-xs text-slate-400">Nível da Caixa</div>
+            <div id="valPct" class="text-3xl font-bold font-mono text-sky-400 mt-1">--%</div>
+            <div id="valBadge" class="text-xs text-slate-400 mt-1 font-medium">Aguardando...</div>
+          </div>
 
-        <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
-          <div class="text-xs text-slate-400">Distância Sensor</div>
-          <div id="valDist" class="text-xl font-semibold font-mono mt-1">-- cm</div>
-          <div class="text-xs text-slate-400 mt-1">Topo da tampa: 197 cm</div>
-        </div>
+          <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
+            <div class="text-xs text-slate-400">Volume Estimado</div>
+            <div id="valLitros" class="text-3xl font-bold font-mono text-white mt-1">-- L</div>
+            <div class="text-xs text-slate-400 mt-1">Capacidade útil: 4.953 L</div>
+          </div>
 
-        <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
-          <div class="text-xs text-slate-400">Temp. Chip ESP32-S3</div>
-          <div id="valTemp" class="text-xl font-semibold font-mono text-amber-300 mt-1">-- °C</div>
-          <div id="valTempSub" class="text-xs text-slate-400 mt-1">Sensor interno nativo</div>
-        </div>
+          <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
+            <div class="text-xs text-slate-400">Altura da Água</div>
+            <div id="valAltura" class="text-xl font-semibold font-mono mt-1">-- cm</div>
+            <div class="text-xs text-slate-400 mt-1">Boia / Entrada: 145 cm</div>
+          </div>
 
-        <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
-          <div class="text-xs text-slate-400">Sinal Wi-Fi (RSSI)</div>
-          <div id="valRssi" class="text-xl font-semibold font-mono text-emerald-300 mt-1">-- dBm</div>
-          <div id="valTime" class="text-xs text-slate-400 mt-1">Último pacote: --</div>
+          <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
+            <div class="text-xs text-slate-400">Distância Sensor</div>
+            <div id="valDist" class="text-xl font-semibold font-mono mt-1">-- cm</div>
+            <div class="text-xs text-slate-400 mt-1">Topo da tampa: 197 cm</div>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
+            <div class="text-xs text-slate-400">Temp. Chip ESP32-S3</div>
+            <div id="valTemp" class="text-xl font-semibold font-mono text-amber-300 mt-1">-- °C</div>
+            <div class="text-xs text-slate-400 mt-1">Sensor interno nativo</div>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
+            <div class="text-xs text-slate-400">Sinal Wi-Fi (RSSI)</div>
+            <div id="valRssi" class="text-xl font-semibold font-mono text-emerald-300 mt-1">-- dBm</div>
+            <div id="valTime" class="text-xs text-slate-400 mt-1">Último pacote: --</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
+    // ========================================================================
+    // 1. CRIPTOGRAFIA (PBKDF2-SHA256 100.000 ITERAÇÕES) & WEBAUTHN BIOMETRIA
+    // ========================================================================
+    const VAULT_STORAGE_KEY = 'caixa_fortlev_auth_vault_v1';
+    let currentSessionUser = null;
+
+    function bufToBase64(buf) {
+      return btoa(String.fromCharCode(...new Uint8Array(buf)));
+    }
+    function base64ToBuf(b64) {
+      return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    }
+
+    async function derivePasswordHash(password, saltBytes) {
+      const enc = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey(
+        'raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveBits']
+      );
+      const bits = await crypto.subtle.deriveBits(
+        { name: 'PBKDF2', salt: saltBytes, iterations: 100000, hash: 'SHA-256' },
+        keyMaterial,
+        256
+      );
+      return bufToBase64(bits);
+    }
+
+    function loadVault() {
+      try {
+        const raw = localStorage.getItem(VAULT_STORAGE_KEY);
+        return raw ? JSON.parse(raw) : { users: {}, lastBioUser: null };
+      } catch {
+        return { users: {}, lastBioUser: null };
+      }
+    }
+
+    function saveVault(vault) {
+      localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(vault));
+    }
+
+    function showAuthAlert(msg, isError = true) {
+      const el = document.getElementById('authAlert');
+      el.textContent = msg;
+      el.className = isError
+        ? 'rounded-xl px-3.5 py-2.5 text-xs font-medium border bg-rose-950/80 border-rose-700 text-rose-200'
+        : 'rounded-xl px-3.5 py-2.5 text-xs font-medium border bg-emerald-950/80 border-emerald-700 text-emerald-200';
+      el.classList.remove('hidden');
+    }
+
+    function switchAuthTab(mode) {
+      const loginPanel = document.getElementById('loginPanel');
+      const regForm = document.getElementById('registerForm');
+      const tabLogin = document.getElementById('tabLoginBtn');
+      const tabReg = document.getElementById('tabRegisterBtn');
+      document.getElementById('authAlert').classList.add('hidden');
+
+      if (mode === 'login') {
+        loginPanel.classList.remove('hidden');
+        regForm.classList.add('hidden');
+        tabLogin.className = 'py-2 rounded-lg bg-sky-600 text-white transition';
+        tabReg.className = 'py-2 rounded-lg text-slate-400 hover:text-white transition';
+        refreshBiometricButtonState();
+      } else {
+        loginPanel.classList.add('hidden');
+        regForm.classList.remove('hidden');
+        tabReg.className = 'py-2 rounded-lg bg-emerald-600 text-white transition';
+        tabLogin.className = 'py-2 rounded-lg text-slate-400 hover:text-white transition';
+      }
+    }
+
+    document.getElementById('tabLoginBtn').addEventListener('click', () => switchAuthTab('login'));
+    document.getElementById('tabRegisterBtn').addEventListener('click', () => switchAuthTab('register'));
+
+    // Registra a Impressão Digital no chip de segurança do Android / Windows Hello via WebAuthn
+    async function enrollBiometricForUser(username) {
+      if (!window.PublicKeyCredential) {
+        throw new Error('Este navegador/dispositivo não suporta biometria WebAuthn.');
+      }
+      const challenge = crypto.getRandomValues(new Uint8Array(32));
+      const userId = crypto.getRandomValues(new Uint8Array(16));
+
+      const credential = await navigator.credentials.create({
+        publicKey: {
+          challenge,
+          rp: { name: "Monitor Caixa d'Água 5000L", id: window.location.hostname || 'localhost' },
+          user: {
+            id: userId,
+            name: username,
+            displayName: username
+          },
+          pubKeyCredParams: [
+            { type: 'public-key', alg: -7 },   // ES256
+            { type: 'public-key', alg: -257 }  // RS256
+          ],
+          authenticatorSelection: {
+            authenticatorAttachment: 'platform', // Usa o leitor de digital nativo do Android / aparelho
+            userVerification: 'required',
+            residentKey: 'preferred'
+          },
+          timeout: 60000
+        }
+      });
+
+      const vault = loadVault();
+      if (vault.users[username]) {
+        vault.users[username].credentialId = bufToBase64(credential.rawId);
+        vault.lastBioUser = username;
+        saveVault(vault);
+      }
+      return true;
+    }
+
+    // Autentica usando o Leitor de Impressão Digital do Android / Dispositivo
+    async function authenticateWithBiometrics() {
+      const vault = loadVault();
+      const username = vault.lastBioUser;
+      if (!username || !vault.users[username] || !vault.users[username].credentialId) {
+        showAuthAlert('Cadastre um usuário e ative a impressão digital primeiro.');
+        return;
+      }
+
+      try {
+        const challenge = crypto.getRandomValues(new Uint8Array(32));
+        const credIdBuf = base64ToBuf(vault.users[username].credentialId);
+
+        await navigator.credentials.get({
+          publicKey: {
+            challenge,
+            allowCredentials: [{
+              id: credIdBuf,
+              type: 'public-key',
+              transports: ['internal']
+            }],
+            userVerification: 'required',
+            timeout: 60000
+          }
+        });
+
+        unlockDashboard(username);
+      } catch (err) {
+        console.warn('Biometria cancelada ou falhou:', err);
+        showAuthAlert('Leitura da digital não concluída. Tente novamente ou use sua senha.');
+      }
+    }
+
+    function refreshBiometricButtonState() {
+      const vault = loadVault();
+      const bioUser = vault.lastBioUser;
+      const btnBio = document.getElementById('btnBiometricLogin');
+      const divBio = document.getElementById('dividerBio');
+
+      if (bioUser && vault.users[bioUser] && vault.users[bioUser].credentialId) {
+        btnBio.classList.remove('hidden');
+        divBio.classList.remove('hidden');
+        document.getElementById('loginUser').value = bioUser;
+      } else {
+        btnBio.classList.add('hidden');
+        divBio.classList.add('hidden');
+      }
+    }
+
+    document.getElementById('btnBiometricLogin').addEventListener('click', authenticateWithBiometrics);
+
+    // Cadastro de novo usuário com PBKDF2-SHA256 (100k iterações) + Digital opcional
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('regUser').value.trim().toLowerCase();
+      const pass = document.getElementById('regPass').value;
+      const passConfirm = document.getElementById('regPassConfirm').value;
+      const wantBio = document.getElementById('regEnableBio').checked;
+
+      if (pass !== passConfirm) {
+        showAuthAlert('As senhas digitadas não conferem.');
+        return;
+      }
+
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const passwordHash = await derivePasswordHash(pass, salt);
+
+      const vault = loadVault();
+      vault.users[username] = {
+        salt: bufToBase64(salt),
+        passwordHash,
+        credentialId: null,
+        createdAt: new Date().toISOString()
+      };
+      saveVault(vault);
+
+      if (wantBio && window.PublicKeyCredential) {
+        try {
+          await enrollBiometricForUser(username);
+          showAuthAlert('Conta e Impressão Digital cadastradas com sucesso!', false);
+        } catch (err) {
+          console.warn('Biometria não vinculada no cadastro:', err);
+          showAuthAlert('Conta criada com senha! (Você pode ativar a digital no topo do painel).', false);
+        }
+      } else {
+        showAuthAlert('Conta criptografada criada com sucesso!', false);
+      }
+
+      setTimeout(() => unlockDashboard(username), 600);
+    });
+
+    // Login por Usuário e Senha
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('loginUser').value.trim().toLowerCase();
+      const pass = document.getElementById('loginPass').value;
+
+      const vault = loadVault();
+      const userRecord = vault.users[username];
+      if (!userRecord) {
+        showAuthAlert('Usuário não encontrado neste aparelho. Clique em "Cadastrar Conta" acima.');
+        return;
+      }
+
+      const saltBytes = base64ToBuf(userRecord.salt);
+      const computedHash = await derivePasswordHash(pass, saltBytes);
+
+      if (computedHash !== userRecord.passwordHash) {
+        showAuthAlert('Senha incorreta.');
+        return;
+      }
+
+      document.getElementById('loginPass').value = '';
+      unlockDashboard(username);
+    });
+
+    function unlockDashboard(username) {
+      currentSessionUser = username;
+      const vault = loadVault();
+      const hasBio = !!(vault.users[username] && vault.users[username].credentialId);
+
+      document.getElementById('loggedUserName').textContent = username;
+      const bioPill = document.getElementById('bioStatusPill');
+      if (hasBio) {
+        bioPill.textContent = '👆 Digital Ativa';
+        bioPill.className = 'px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[11px]';
+      } else {
+        bioPill.textContent = '🔑 Apenas Senha';
+        bioPill.className = 'px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 text-[11px]';
+      }
+
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('dashboardScreen').classList.remove('hidden');
+      fetchThingSpeak();
+    }
+
+    document.getElementById('btnLogout').addEventListener('click', () => {
+      currentSessionUser = null;
+      document.getElementById('dashboardScreen').classList.add('hidden');
+      document.getElementById('authScreen').classList.remove('hidden');
+      switchAuthTab('login');
+    });
+
+    document.getElementById('btnEnrollBioInApp').addEventListener('click', async () => {
+      if (!currentSessionUser) return;
+      try {
+        await enrollBiometricForUser(currentSessionUser);
+        unlockDashboard(currentSessionUser);
+        alert('Impressão digital vinculada com sucesso! Na próxima vez você poderá entrar apenas com a digital.');
+      } catch (err) {
+        alert('Não foi possível cadastrar a digital: ' + err.message);
+      }
+    });
+
+    // ========================================================================
+    // 2. INSTALAÇÃO PWA NO ANDROID (ADD TO HOME SCREEN) & SERVICE WORKER
+    // ========================================================================
+    let deferredInstallPrompt = null;
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      document.getElementById('btnInstallPwaAuth').classList.remove('hidden');
+      document.getElementById('btnInstallPwaDash').classList.remove('hidden');
+    });
+
+    async function triggerPwaInstall() {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      document.getElementById('btnInstallPwaAuth').classList.add('hidden');
+      document.getElementById('btnInstallPwaDash').classList.add('hidden');
+    }
+
+    document.getElementById('btnInstallPwaAuth').addEventListener('click', triggerPwaInstall);
+    document.getElementById('btnInstallPwaDash').addEventListener('click', triggerPwaInstall);
+
+    // ========================================================================
+    // 3. DASHBOARD DA CAIXA D'ÁGUA & DETECÇÃO ONLINE/OFFLINE EM TEMPO REAL
+    // ========================================================================
     const CHANNEL_ID = '3588391';
     const READ_API_KEY = 'JYLKE4PXYAY521JR';
-
-    // Tempo máximo sem pacote para considerar o ESP32-S3 ONLINE em tempo real (45 segundos)
     const ONLINE_THRESHOLD_SEC = 45;
 
     const H_SENSOR = 1.97;
@@ -142,6 +581,7 @@
     }
 
     function updateConnectionStatusUI() {
+      if (!currentSessionUser) return;
       const dot = document.getElementById('statusDot');
       const badge = document.getElementById('connBadge');
       const sub = document.getElementById('subStatus');
@@ -242,6 +682,7 @@
     document.getElementById('btnRefresh').addEventListener('click', fetchThingSpeak);
 
     async function fetchThingSpeak() {
+      if (!currentSessionUser) return;
       try {
         const url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds/last.json?api_key=${READ_API_KEY}&_t=${Date.now()}`;
         const res = await fetch(url, { cache: 'no-store' });
@@ -276,119 +717,120 @@
     }
 
     function drawTank() {
-      currentHeightM += (targetHeightM - currentHeightM) * 0.08;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (currentSessionUser) {
+        currentHeightM += (targetHeightM - currentHeightM) * 0.08;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const topY = 56;
-      const botY = 242;
-      const tankH = botY - topY;
-      const cx = 140;
-      const topHalfW = 104;
-      const botHalfW = 80;
+        const topY = 56;
+        const botY = 242;
+        const tankH = botY - topY;
+        const cx = 140;
+        const topHalfW = 104;
+        const botHalfW = 80;
 
-      const ratio = Math.min(Math.max(currentHeightM / H_BORDA, 0), 1);
-      const waterY = botY - ratio * tankH;
+        const ratio = Math.min(Math.max(currentHeightM / H_BORDA, 0), 1);
+        const waterY = botY - ratio * tankH;
 
-      // Clip frustum shape
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(cx - topHalfW, topY);
-      ctx.lineTo(cx + topHalfW, topY);
-      ctx.lineTo(cx + botHalfW, botY);
-      ctx.lineTo(cx - botHalfW, botY);
-      ctx.closePath();
-      ctx.clip();
-
-      ctx.fillStyle = 'rgba(30, 41, 59, 0.55)';
-      ctx.fillRect(0, topY, canvas.width, tankH);
-
-      if (ratio > 0.005) {
-        // Back wave
+        ctx.save();
         ctx.beginPath();
-        for (let x = cx - topHalfW - 15; x <= cx + topHalfW + 15; x += 4) {
-          const y = waterY + Math.sin((x * 0.04) + phase) * 4.5;
-          if (x === cx - topHalfW - 15) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.lineTo(cx + topHalfW + 15, botY + 15);
-        ctx.lineTo(cx - topHalfW - 15, botY + 15);
+        ctx.moveTo(cx - topHalfW, topY);
+        ctx.lineTo(cx + topHalfW, topY);
+        ctx.lineTo(cx + botHalfW, botY);
+        ctx.lineTo(cx - botHalfW, botY);
         ctx.closePath();
-        ctx.fillStyle = 'rgba(14, 165, 233, 0.45)';
-        ctx.fill();
+        ctx.clip();
 
-        // Front wave
-        ctx.beginPath();
-        for (let x = cx - topHalfW - 15; x <= cx + topHalfW + 15; x += 4) {
-          const y = waterY + Math.cos((x * 0.035) - phase * 1.25) * 4.5 + 2;
-          if (x === cx - topHalfW - 15) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
+        ctx.fillStyle = 'rgba(30, 41, 59, 0.55)';
+        ctx.fillRect(0, topY, canvas.width, tankH);
+
+        if (ratio > 0.005) {
+          ctx.beginPath();
+          for (let x = cx - topHalfW - 15; x <= cx + topHalfW + 15; x += 4) {
+            const y = waterY + Math.sin((x * 0.04) + phase) * 4.5;
+            if (x === cx - topHalfW - 15) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.lineTo(cx + topHalfW + 15, botY + 15);
+          ctx.lineTo(cx - topHalfW - 15, botY + 15);
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(14, 165, 233, 0.45)';
+          ctx.fill();
+
+          ctx.beginPath();
+          for (let x = cx - topHalfW - 15; x <= cx + topHalfW + 15; x += 4) {
+            const y = waterY + Math.cos((x * 0.035) - phase * 1.25) * 4.5 + 2;
+            if (x === cx - topHalfW - 15) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.lineTo(cx + topHalfW + 15, botY + 15);
+          ctx.lineTo(cx - topHalfW - 15, botY + 15);
+          ctx.closePath();
+          const grad = ctx.createLinearGradient(0, waterY, 0, botY);
+          grad.addColorStop(0, 'rgba(56, 189, 248, 0.9)');
+          grad.addColorStop(1, 'rgba(3, 105, 161, 0.95)');
+          ctx.fillStyle = grad;
+          ctx.fill();
         }
-        ctx.lineTo(cx + topHalfW + 15, botY + 15);
-        ctx.lineTo(cx - topHalfW - 15, botY + 15);
-        ctx.closePath();
-        const grad = ctx.createLinearGradient(0, waterY, 0, botY);
-        grad.addColorStop(0, 'rgba(56, 189, 248, 0.9)');
-        grad.addColorStop(1, 'rgba(3, 105, 161, 0.95)');
-        ctx.fillStyle = grad;
-        ctx.fill();
-      }
 
-      // Max useful level dashed line
-      const maxY = botY - (H_MAX_UTIL / H_BORDA) * tankH;
-      ctx.setLineDash([5, 5]);
-      ctx.strokeStyle = 'rgba(148, 163, 184, 0.6)';
-      ctx.beginPath();
-      ctx.moveTo(cx - topHalfW, maxY);
-      ctx.lineTo(cx + topHalfW, maxY);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.restore();
-
-      // Tank walls
-      ctx.strokeStyle = isEspOnline ? '#38bdf8' : '#64748b';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(cx - topHalfW, topY);
-      ctx.lineTo(cx + topHalfW, topY);
-      ctx.lineTo(cx + botHalfW, botY);
-      ctx.lineTo(cx - botHalfW, botY);
-      ctx.closePath();
-      ctx.stroke();
-
-      // Fortlev raised lid
-      ctx.beginPath();
-      ctx.moveTo(cx - topHalfW - 6, topY);
-      ctx.quadraticCurveTo(cx, topY - 44, cx + topHalfW + 6, topY);
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(51, 65, 85, 0.5)';
-      ctx.fill();
-      ctx.strokeStyle = isEspOnline ? '#38bdf8' : '#64748b';
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-
-      // Ultrasonic transducer
-      ctx.fillStyle = isEspOnline ? '#38bdf8' : '#ef4444';
-      ctx.fillRect(cx - 12, topY - 27, 24, 9);
-
-      // Ultrasonic cone rays
-      if (isEspOnline || chkSim.checked) {
-        ctx.setLineDash([3, 4]);
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
-        ctx.lineWidth = 1.5;
+        const maxY = botY - (H_MAX_UTIL / H_BORDA) * tankH;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.6)';
         ctx.beginPath();
-        ctx.moveTo(cx, topY - 18);
-        ctx.lineTo(cx - 22, waterY);
-        ctx.moveTo(cx, topY - 18);
-        ctx.lineTo(cx + 22, waterY);
+        ctx.moveTo(cx - topHalfW, maxY);
+        ctx.lineTo(cx + topHalfW, maxY);
         ctx.stroke();
         ctx.setLineDash([]);
-      }
+        ctx.restore();
 
-      phase += 0.055;
+        ctx.strokeStyle = isEspOnline ? '#38bdf8' : '#64748b';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(cx - topHalfW, topY);
+        ctx.lineTo(cx + topHalfW, topY);
+        ctx.lineTo(cx + botHalfW, botY);
+        ctx.lineTo(cx - botHalfW, botY);
+        ctx.closePath();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(cx - topHalfW - 6, topY);
+        ctx.quadraticCurveTo(cx, topY - 44, cx + topHalfW + 6, topY);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(51, 65, 85, 0.5)';
+        ctx.fill();
+        ctx.strokeStyle = isEspOnline ? '#38bdf8' : '#64748b';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        ctx.fillStyle = isEspOnline ? '#38bdf8' : '#ef4444';
+        ctx.fillRect(cx - 12, topY - 27, 24, 9);
+
+        if (isEspOnline || chkSim.checked) {
+          ctx.setLineDash([3, 4]);
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(cx, topY - 18);
+          ctx.lineTo(cx - 22, waterY);
+          ctx.moveTo(cx, topY - 18);
+          ctx.lineTo(cx + 22, waterY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+
+        phase += 0.055;
+      }
       requestAnimationFrame(drawTank);
     }
 
-    fetchThingSpeak();
+    // Inicialização: se não houver nenhum usuário cadastrado neste aparelho, abre direto na aba Cadastrar Conta
+    const initialVault = loadVault();
+    if (Object.keys(initialVault.users).length === 0) {
+      switchAuthTab('register');
+    } else {
+      switchAuthTab('login');
+    }
+
     setInterval(fetchThingSpeak, 10000);
     setInterval(updateConnectionStatusUI, 1000);
     drawTank();
