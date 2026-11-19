@@ -382,8 +382,9 @@ void loop() {
     responderComandosTelegram();
   }
 
-  // Continua atualizando o ThingSpeak a cada 5 minutos mesmo no modo contínuo
-  if (WiFi.status() == WL_CONNECTED && (millis() - ultimoEnvioCloudMs >= (SLEEP_NORMAL_SEC * 1000UL))) {
+  // No modo online contínuo, envia batimento (heartbeat) ao ThingSpeak a cada 20 segundos
+  // para o painel web detectar online/offline em tempo real
+  if (WiFi.status() == WL_CONNECTED && (millis() - ultimoEnvioCloudMs >= 20000UL)) {
     ultimoEnvioCloudMs = millis();
     Medicao m = realizarMedicaoCompleta();
     enviarHomeAssistant(m);
