@@ -4,7 +4,7 @@
  *
  * Comandos disponíveis no Bot do Telegram:
  *   /nivel ou /status -> Mede na hora e responde com Nível (%), Litros, Distância, Temp e Wi-Fi
- *   /continuo         -> Mantém o ESP32-S3 online por 15 min respondendo em tempo real (2s)
+ *   /continuo         -> Mantém o ESP32-S3 online respondendo em tempo real (2s)
  *   /economia         -> Ativa o modo Deep Sleep (responde comandos pendentes a cada ciclo de 5 min)
  *   /ajuda ou /start  -> Exibe a lista de comandos e o seu Chat ID
  */
@@ -38,10 +38,11 @@ RTC_DATA_ATTR bool     alertaTempAltaEnv   = false;
 RTC_DATA_ATTR bool     modoContinuoAtivo   = TELEGRAM_SEMPRE_ONLINE_PADRAO;
 RTC_DATA_ATTR long     lastTelegramUpdate  = 0;
 
-unsigned long inicioModoContinuoMs = 0;
+WiFiClientSecure telegramClient;
+UniversalTelegramBot bot(TELEGRAM_BOT_TOKEN, telegramClient);
+
 unsigned long ultimoPollTelegramMs = 0;
 unsigned long ultimoEnvioCloudMs   = 0;
-constexpr unsigned long TIMEOUT_MODO_CONTINUO_MS = 15UL * 60UL * 1000UL; // 15 minutos
 
 struct Medicao {
   float distanciaM;
@@ -127,7 +128,7 @@ String formatarMensagemStatus(const Medicao &m) {
     msg += "📏 *Altura da água:* " + String(m.alturaAguaM * 100.0f, 0) + " cm\n";
     msg += "📡 *Distância sensor:* " + String(m.distanciaM * 100.0f, 1) + " cm\n";
   } else {
-    msg += "⚠️ *Sensor JSN-SR04T:* Sem leitura válida (verifique conexão ou zona cega)\n";
+    msg += "⚠️ *Sensor JSN-SR04T:* Sem leitura válida (sensor desconectado ou na zona cega)\n";
   }
   msg += "🌡️ *Temp. ESP32-S3:* " + String(m.tempInternaEspC, 1) + " °C\n";
   msg += "📶 *Sinal Wi-Fi:* " + String(m.rssi) + " dBm\n";
@@ -209,7 +210,9 @@ void enviarThingSpeak(const Medicao &m) {
 // ============================================================================
 // TELEGRAM: LEITURA DE COMANDOS INTERATIVOS + ALERTAS AUTOMÁTICOS
 // ============================================================================
-void responderComandosTelegram(UniversalTelegramBot &bot) {
+void responderComandosTelegram() {
+  if (!USE_TELEGRAM || String(TELEGRAM_BOT_TOKEN).startsWith("0000")) return;
+
   int numNovas = bot.getUpdates(lastTelegramUpdate + 1);
 
   while (numNovas > 0) {
@@ -219,7 +222,6 @@ void responderComandosTelegram(UniversalTelegramBot &bot) {
       String nome   = bot.messages[i].from_name;
       lastTelegramUpdate = bot.messages[i].update_id;
 
-      // Remove sufixo @NomeDoBot caso enviado em grupo/canal
       int arrobaIdx = texto.indexOf('@');
       if (arrobaIdx > 0) texto = texto.substring(0, arrobaIdx);
       texto.trim();
@@ -234,11 +236,10 @@ void responderComandosTelegram(UniversalTelegramBot &bot) {
       }
       else if (texto == "/continuo") {
         modoContinuoAtivo = true;
-        inicioModoContinuoMs = millis();
         bot.sendMessage(chatId,
-          "⚡ *Modo Online Contínuo ativado por 15 minutos!*\n"
-          "O ESP32-S3 não entrará em Deep Sleep agora e responderá aos comandos `/nivel` em tempo real (2s).\n"
-          "Envie `/economia` quando quiser voltar a economizar bateria.",
+          "⚡ *Modo Online Contínuo ativado!*\n"
+          "O ESP32-S3 permanecerá acordado respondendo aos comandos `/nivel` em tempo real (a cada 2s).\n"
+          "Envie `/economia` quando quiser ativar o Deep Sleep.",
           "Markdown");
       }
       else if (texto == "/economia") {
@@ -248,13 +249,13 @@ void responderComandosTelegram(UniversalTelegramBot &bot) {
           "O ESP32-S3 vai dormir entre as leituras (1 a 5 min) e responderá aos seus comandos assim que acordar no próximo ciclo.",
           "Markdown");
       }
-      else if (texto == "/start" || texto == "/ajuda" || texto == "/help") {
+      else {
         String boasVindas = "👋 Olá, *" + nome + "*!\n"
                             "Sou o monitor da sua *Caixa d'Água Fortlev 5.000 L*.\n\n"
                             "📋 *Comandos disponíveis:*\n"
                             "• `/nivel` ou `/status` — Mede o nível, volume em litros e temperatura agora\n"
-                            "• `/continuo` — Fica online por 15 min respondendo na hora (sem dormir)\n"
-                            "• `/economia` — Volta para o modo Deep Sleep (economia solar)\n"
+                            "• `/continuo` — Fica online respondendo na hora (sem dormir)\n"
+                            "• `/economia` — Ativa o modo Deep Sleep (economia solar)\n"
                             "• `/ajuda` — Mostra esta mensagem\n\n"
                             "🆔 *Seu Chat ID:* `" + chatId + "`";
         bot.sendMessage(chatId, boasVindas, "Markdown");
@@ -267,17 +268,18 @@ void responderComandosTelegram(UniversalTelegramBot &bot) {
 void processarTelegram(const Medicao &m) {
   if (!USE_TELEGRAM || String(TELEGRAM_BOT_TOKEN).startsWith("0000")) return;
 
-  WiFiClientSecure client;
-  client.setInsecure();
-  UniversalTelegramBot bot(TELEGRAM_BOT_TOKEN, client);
-
   // 1. Verifica e responde comandos enviados pelo usuário (/nivel, /status, /continuo, etc.)
-  responderComandosTelegram(bot);
+  responderComandosTelegram();
 
-  // 2. Verifica alertas automáticos (apenas se o TELEGRAM_CHAT_ID estiver configurado)
+  // 2. Verifica alertas automáticos e mensagem de boot (se TELEGRAM_CHAT_ID estiver configurado)
   if (String(TELEGRAM_CHAT_ID) == "000000000" || String(TELEGRAM_CHAT_ID).length() == 0) return;
 
   String msg = "";
+
+  if (bootCount == 1) {
+    msg += "🟢 *ESP32-S3 Online e Conectado ao Wi-Fi!*\n"
+           "Envie `/nivel` para consultar agora ou `/ajuda` para ver os comandos.\n";
+  }
 
   if (m.distanciaM > 0) {
     if (m.nivelPct <= ALERTA_NIVEL_BAIXO_PCT && !alertaNivelBaixoEnv) {
@@ -338,6 +340,7 @@ void setup() {
 
   pinMode(PIN_JSN_TRIG, OUTPUT);
   pinMode(PIN_JSN_ECHO, INPUT);
+  telegramClient.setInsecure();
 
   if (String(WIFI_SSID) != "SEU_WIFI_AQUI") {
     WiFi.mode(WIFI_STA);
@@ -362,7 +365,6 @@ void setup() {
   }
 
   if (modoContinuoAtivo && WiFi.status() == WL_CONNECTED) {
-    inicioModoContinuoMs = millis();
     Serial.println("[Telegram] Modo Online Contínuo ativo (escutando comandos a cada 2s)...");
   } else {
     entrarEmDeepSleep(m);
@@ -370,19 +372,14 @@ void setup() {
 }
 
 void loop() {
-  // O loop() só executa quando o usuário ativa o /continuo pelo Telegram
-  if (!modoContinuoAtivo || (millis() - inicioModoContinuoMs >= TIMEOUT_MODO_CONTINUO_MS)) {
-    modoContinuoAtivo = false;
+  if (!modoContinuoAtivo) {
     Medicao m = realizarMedicaoCompleta();
     entrarEmDeepSleep(m);
   }
 
   if (WiFi.status() == WL_CONNECTED && (millis() - ultimoPollTelegramMs >= 2000)) {
     ultimoPollTelegramMs = millis();
-    WiFiClientSecure client;
-    client.setInsecure();
-    UniversalTelegramBot bot(TELEGRAM_BOT_TOKEN, client);
-    responderComandosTelegram(bot);
+    responderComandosTelegram();
   }
 
   // Continua atualizando o ThingSpeak a cada 5 minutos mesmo no modo contínuo

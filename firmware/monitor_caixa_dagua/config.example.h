@@ -28,7 +28,7 @@
 
 // Se true, o ESP32 não entra em Deep Sleep e responde aos comandos do Telegram em 2 segundos.
 // Você também pode ativar/desativar isso pelo celular enviando /continuo ou /economia no Telegram!
-#define TELEGRAM_SEMPRE_ONLINE_PADRAO    false
+#define TELEGRAM_SEMPRE_ONLINE_PADRAO    true
 
 // ============================================================================
 // 4. THINGSPEAK (Histórico e Gráficos Web)
