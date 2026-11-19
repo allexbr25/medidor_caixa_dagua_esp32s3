@@ -8,9 +8,9 @@
 #define WIFI_TIMEOUT_MS     15000
 
 // ============================================================================
-// 2. HOME ASSISTANT (ZimaOS - Acesso Local HTTP ou Remoto HTTPS)
+// 2. HOME ASSISTANT (ZimaOS - Opcional)
 // ============================================================================
-#define USE_HOME_ASSISTANT  true
+#define USE_HOME_ASSISTANT  false
 // Exemplo remoto (do trabalho): "https://seu-ha.seudominio.com"
 // Exemplo local (em casa):      "http://192.168.1.100:8123"
 // (Não coloque barra '/' no final da URL)
@@ -27,9 +27,9 @@
 #define TELEGRAM_STATUS_A_CADA_N_CICLOS  12
 
 // ============================================================================
-// 4. THINGSPEAK (Opcional - Desativado por padrão pois o Home Assistant já faz)
+// 4. THINGSPEAK (Histórico e Gráficos Web)
 // ============================================================================
-#define USE_THINGSPEAK      false
+#define USE_THINGSPEAK      true
 #define THINGSPEAK_API_KEY  "SUA_WRITE_API_KEY"
 
 // ============================================================================
