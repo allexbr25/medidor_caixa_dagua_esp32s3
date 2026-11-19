@@ -11,20 +11,24 @@
 // 2. HOME ASSISTANT (ZimaOS - Opcional)
 // ============================================================================
 #define USE_HOME_ASSISTANT  false
-// Exemplo remoto (do trabalho): "https://seu-ha.seudominio.com"
-// Exemplo local (em casa):      "http://192.168.1.100:8123"
-// (Não coloque barra '/' no final da URL)
 #define HA_BASE_URL         "http://192.168.1.100:8123"
-// Token gerado no Home Assistant em: Perfil -> Segurança -> Tokens de Acesso de Longa Duração
 #define HA_TOKEN            "SEU_LONG_LIVED_ACCESS_TOKEN_AQUI"
 
 // ============================================================================
-// 3. TELEGRAM BOT (Opcional - Alertas Diretos no Celular)
+// 3. TELEGRAM BOT INTERATIVO (Comandos /nivel, /status, /continuo, /economia)
 // ============================================================================
-#define USE_TELEGRAM        false
+#define USE_TELEGRAM        true
 #define TELEGRAM_BOT_TOKEN  "0000000000:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+// Seu Chat ID (opcional para comandos: o bot responde a quem mandar /nivel,
+// mas obrigatório para receber alertas automáticos de nível baixo/alto)
 #define TELEGRAM_CHAT_ID    "000000000"
-#define TELEGRAM_STATUS_A_CADA_N_CICLOS  12
+
+// Envia um status periódico automático a cada N ciclos (0 = apenas alertas e respostas a comandos)
+#define TELEGRAM_STATUS_A_CADA_N_CICLOS  0
+
+// Se true, o ESP32 não entra em Deep Sleep e responde aos comandos do Telegram em 2 segundos.
+// Você também pode ativar/desativar isso pelo celular enviando /continuo ou /economia no Telegram!
+#define TELEGRAM_SEMPRE_ONLINE_PADRAO    false
 
 // ============================================================================
 // 4. THINGSPEAK (Histórico e Gráficos Web)
@@ -35,7 +39,6 @@
 // ============================================================================
 // 5. GEOMETRIA DA CAIXA D'ÁGUA (Fortlev 5.000L Polietileno - Tronco de Cone)
 // ============================================================================
-// Meça a distância real da face do sensor no topo da tampa até o fundo da caixa
 #define H_SENSOR_M          1.97f   // Altura do sensor até o fundo (m)
 #define H_MAX_UTIL_M        1.45f   // Nível máximo útil (cano de entrada/boia) (m)
 #define H_BORDA_M           1.63f   // Altura da borda sem tampa (m)
