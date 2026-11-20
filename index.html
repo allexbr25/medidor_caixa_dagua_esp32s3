@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="./manifest.json" />
-  <title>Monitor Caixa d'Água 5.000L — App Seguro</title>
+  <title>Monitor Caixa d'Água 1.000L — App Seguro</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans select-none">
@@ -22,7 +22,7 @@
         <div class="w-16 h-16 mx-auto rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-3xl shadow-inner">
           💧
         </div>
-        <h1 class="text-xl font-bold tracking-tight">Caixa d'Água Fortlev 5.000 L</h1>
+        <h1 id="authTankTitle" class="text-xl font-bold tracking-tight">Caixa d'Água Fortlev 1.000 L</h1>
         <p class="text-xs text-slate-400">Acesso Restrito • Criptografia PBKDF2/AES &amp; Biometria</p>
       </div>
 
@@ -264,8 +264,8 @@
         <div class="flex items-center gap-3">
           <span id="statusDot" class="w-3.5 h-3.5 rounded-full bg-slate-500"></span>
           <div>
-            <div class="flex items-center gap-2.5">
-              <h1 class="text-lg md:text-xl font-bold tracking-tight">Caixa d'Água Fortlev 5.000 L</h1>
+            <div class="flex flex-wrap items-center gap-2.5">
+              <h1 id="dashTankTitle" class="text-lg md:text-xl font-bold tracking-tight">Caixa d'Água Fortlev 1.000 L</h1>
               <span id="connBadge" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
                 Verificando...
               </span>
@@ -274,15 +274,195 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-3 text-xs">
+        <div class="flex flex-wrap items-center gap-3 text-xs">
           <label class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 cursor-pointer">
             <input id="chkSim" type="checkbox" class="accent-sky-400" />
             <span>Simular Nível</span>
           </label>
-          <input id="sliderAltura" type="range" min="0" max="155" value="116" class="accent-sky-400 w-28 md:w-32 cursor-pointer hidden" />
+          <input id="sliderAltura" type="range" min="0" max="76" value="58" class="accent-sky-400 w-28 md:w-32 cursor-pointer hidden" />
           <button id="btnRefresh" class="bg-sky-600 hover:bg-sky-500 text-white font-medium px-3 py-1.5 rounded-lg transition">
             Atualizar
           </button>
+        </div>
+      </div>
+
+      <!-- ================================================================== -->
+      <!-- SELETOR DE MODELO / FORMATO DA CAIXA & AJUSTE SOB MEDIDA           -->
+      <!-- ================================================================== -->
+      <div class="bg-slate-900/85 border border-slate-800 rounded-2xl p-4 md:p-5 shadow-lg space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="text-base">🪣</span>
+              <h2 class="text-sm font-bold text-slate-100">Modelo e Formato da Caixa d'Água</h2>
+              <span id="activeShapeBadge" class="px-2 py-0.5 rounded-full bg-sky-950 text-sky-300 border border-sky-800 text-[11px] font-semibold">
+                Tronco de Cone
+              </span>
+            </div>
+            <p id="activeDimsSummary" class="text-xs text-slate-400">
+              Ø Base: 116 cm • Ø Topo: 151 cm • Boia: 72 cm • Borda: 76 cm • Sensor: 97 cm
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2.5 text-xs">
+            <select id="selectTankPreset"
+              class="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-100 font-medium focus:outline-none focus:border-sky-400 cursor-pointer">
+              <optgroup label="🔹 Tronco de Cone (Redonda Polietileno / Fibra)">
+                <option value="cone_310">310 L — Tronco de Cone (Padrão Fortlev/Tigre)</option>
+                <option value="cone_500">500 L — Tronco de Cone (Padrão Fortlev/Tigre)</option>
+                <option value="cone_750">750 L — Tronco de Cone (Padrão Fortlev/Tigre)</option>
+                <option value="cone_1000" selected>1.000 L — Tronco de Cone (Padrão Fortlev/Tigre)</option>
+                <option value="cone_1500">1.500 L — Tronco de Cone (Padrão Fortlev/Tigre)</option>
+                <option value="cone_2000">2.000 L — Tronco de Cone (Padrão Fortlev/Tigre)</option>
+                <option value="cone_3000">3.000 L — Tronco de Cone (Padrão Fortlev/Tigre)</option>
+                <option value="cone_5000">5.000 L — Tronco de Cone (Padrão Fortlev/Tigre)</option>
+              </optgroup>
+              <optgroup label="🔸 Cilíndrica Vertical (Tanque / Torre Reta)">
+                <option value="cyl_500">500 L — Cilíndrica Vertical (Ø 85 cm)</option>
+                <option value="cyl_1000">1.000 L — Cilíndrica Vertical (Ø 102 cm)</option>
+                <option value="cyl_2000">2.000 L — Cilíndrica Vertical (Ø 130 cm)</option>
+                <option value="cyl_5000">5.000 L — Cilíndrica Vertical (Ø 185 cm)</option>
+              </optgroup>
+              <optgroup label="▪️ Retangular / Quadrada (Alvenaria / Cisterna)">
+                <option value="rect_500">500 L — Retangular (110 × 90 cm)</option>
+                <option value="rect_1000">1.000 L — Retangular (140 × 110 cm)</option>
+                <option value="rect_2000">2.000 L — Cisterna Retangular (160 × 125 cm)</option>
+              </optgroup>
+              <optgroup label="⚙️ Sob Medida">
+                <option value="custom">✏️ Personalizado (Definir formato e medidas)</option>
+              </optgroup>
+            </select>
+
+            <button id="btnToggleCustomDims" type="button"
+              class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/40 font-semibold flex items-center gap-1.5 transition">
+              <span>⚙️</span>
+              <span>Ajustar Medidas</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- PAINEL EXPANSÍVEL DE AJUSTE FINO / MEDIDAS PERSONALIZADAS -->
+        <div id="customDimsPanel" class="hidden pt-3 border-t border-slate-800 space-y-4 text-xs">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="font-bold text-sky-300 text-xs uppercase tracking-wider">Ajuste de Formato e Medidas (em centímetros)</h3>
+              <p class="text-slate-400 text-[11px] mt-0.5">
+                Altere qualquer dimensão abaixo caso sua caixa ou a posição da boia/sensor seja diferente do modelo padrão.
+              </p>
+            </div>
+            <!-- Botões rápidos de Formato -->
+            <div class="flex items-center gap-1.5 bg-slate-950/80 p-1 rounded-xl border border-slate-800">
+              <button type="button" data-shape-btn="cone"
+                class="px-2.5 py-1.5 rounded-lg font-semibold transition bg-sky-600 text-white">
+                ⛁ Tronco de Cone
+              </button>
+              <button type="button" data-shape-btn="cylinder"
+                class="px-2.5 py-1.5 rounded-lg font-semibold transition text-slate-400 hover:text-white">
+                🛢️ Cilíndrica
+              </button>
+              <button type="button" data-shape-btn="rectangular"
+                class="px-2.5 py-1.5 rounded-lg font-semibold transition text-slate-400 hover:text-white">
+                🧊 Retangular
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <!-- Nome / Título -->
+            <div class="sm:col-span-2">
+              <label class="block text-slate-400 mb-1">Nome / Identificação da Caixa</label>
+              <input id="inpTankName" type="text" value="Caixa d'Água Fortlev 1.000 L"
+                class="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-100 focus:outline-none focus:border-sky-400" />
+            </div>
+
+            <!-- Campos horizontais: Tronco de Cone -->
+            <div id="fieldWrapConeBase">
+              <label class="block text-slate-400 mb-1">Ø Diâmetro da Base (cm)</label>
+              <input id="inpDBaseCm" type="number" step="0.5" min="20" max="600" value="116"
+                class="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 font-mono text-slate-100 focus:outline-none focus:border-sky-400" />
+            </div>
+            <div id="fieldWrapConeTopo">
+              <label class="block text-slate-400 mb-1">Ø Diâmetro do Topo/Borda (cm)</label>
+              <input id="inpDTopoCm" type="number" step="0.5" min="20" max="600" value="151"
+                class="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 font-mono text-slate-100 focus:outline-none focus:border-sky-400" />
+            </div>
+
+            <!-- Campo horizontal: Cilíndrica -->
+            <div id="fieldWrapCylDiam" class="hidden sm:col-span-2">
+              <label class="block text-slate-400 mb-1">Ø Diâmetro Interno do Cilindro (cm)</label>
+              <input id="inpDCylCm" type="number" step="0.5" min="20" max="600" value="102"
+                class="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 font-mono text-slate-100 focus:outline-none focus:border-sky-400" />
+            </div>
+
+            <!-- Campos horizontais: Retangular -->
+            <div id="fieldWrapRectComp" class="hidden">
+              <label class="block text-slate-400 mb-1">Comprimento Interno (cm)</label>
+              <input id="inpCompCm" type="number" step="0.5" min="20" max="1000" value="140"
+                class="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 font-mono text-slate-100 focus:outline-none focus:border-sky-400" />
+            </div>
+            <div id="fieldWrapRectLarg" class="hidden">
+              <label class="block text-slate-400 mb-1">Largura Interna (cm)</label>
+              <input id="inpLargCm" type="number" step="0.5" min="20" max="1000" value="110"
+                class="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 font-mono text-slate-100 focus:outline-none focus:border-sky-400" />
+            </div>
+
+            <!-- Campos verticais (comuns a todos os formatos) -->
+            <div>
+              <label class="block text-slate-400 mb-1">Altura da Boia / 100% (cm)</label>
+              <input id="inpHMaxUtilCm" type="number" step="0.5" min="10" max="500" value="72"
+                class="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 font-mono text-sky-300 focus:outline-none focus:border-sky-400" />
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1">Altura da Borda s/ Tampa (cm)</label>
+              <input id="inpHBordaCm" type="number" step="0.5" min="10" max="500" value="76"
+                class="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 font-mono text-slate-100 focus:outline-none focus:border-sky-400" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-slate-400 mb-1">Altura do Sensor até o Fundo (cm)</label>
+              <input id="inpHSensorCm" type="number" step="0.5" min="20" max="600" value="97"
+                class="w-full px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700 font-mono text-emerald-300 focus:outline-none focus:border-sky-400" />
+            </div>
+          </div>
+
+          <!-- Resumo Calculado em Tempo Real & Aviso Zona Cega -->
+          <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-950/70 border border-slate-800 rounded-xl p-3">
+            <div class="space-y-0.5">
+              <div class="text-slate-300">
+                Capacidade útil na boia (100%): <span id="previewVolUtil" class="font-bold font-mono text-sky-400">1.000 L</span>
+                <span class="text-slate-600 mx-1.5">|</span>
+                Volume até a borda: <span id="previewVolBorda" class="font-semibold font-mono text-slate-200">1.070 L</span>
+              </div>
+              <div id="previewSensorGap" class="text-[11px] text-slate-400">
+                Folga sensor ↔ água cheia: 25,0 cm (OK para o JSN-SR04T, mín. recomendado: 22 cm)
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <button id="btnResetPresetDims" type="button"
+                class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                ↺ Restaurar Padrão
+              </button>
+              <button id="btnShowEspCode" type="button"
+                class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-700/50 transition">
+                📋 Código ESP32 (config.h)
+              </button>
+              <button id="btnSaveCustomDims" type="button"
+                class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow transition">
+                💾 Aplicar e Salvar
+              </button>
+            </div>
+          </div>
+
+          <!-- Snippet opcional para copiar para o config.h do ESP32-S3 -->
+          <div id="espConfigSnippetBox" class="hidden bg-slate-950 border border-amber-800/60 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-amber-300 font-semibold">Trecho pronto para colar no <code class="text-white">config.h</code> do ESP32-S3:</span>
+              <button id="btnCopyEspCode" type="button" class="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white font-semibold">
+                Copiar config.h
+              </button>
+            </div>
+            <pre id="espConfigSnippetPre" class="text-[11px] font-mono text-emerald-300 overflow-x-auto select-all leading-relaxed"></pre>
+          </div>
         </div>
       </div>
 
@@ -319,19 +499,19 @@
           <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
             <div class="text-xs text-slate-400">Volume Estimado</div>
             <div id="valLitros" class="text-3xl font-bold font-mono text-white mt-1">-- L</div>
-            <div class="text-xs text-slate-400 mt-1">Capacidade útil: 4.953 L</div>
+            <div id="labelCapUtil" class="text-xs text-slate-400 mt-1">Capacidade útil: 1.000 L</div>
           </div>
 
           <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
             <div class="text-xs text-slate-400">Altura da Água</div>
             <div id="valAltura" class="text-xl font-semibold font-mono mt-1">-- cm</div>
-            <div class="text-xs text-slate-400 mt-1">Boia / Entrada: 145 cm</div>
+            <div id="labelBoiaCm" class="text-xs text-slate-400 mt-1">Boia / Entrada: 72 cm</div>
           </div>
 
           <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
             <div class="text-xs text-slate-400">Distância Sensor</div>
             <div id="valDist" class="text-xl font-semibold font-mono mt-1">-- cm</div>
-            <div class="text-xs text-slate-400 mt-1">Topo da tampa: 197 cm</div>
+            <div id="labelSensorCm" class="text-xs text-slate-400 mt-1">Topo da tampa: 97 cm</div>
           </div>
 
           <div class="p-4 rounded-xl bg-slate-800/60 border border-slate-700/70">
@@ -521,7 +701,7 @@
 
       const subject = encodeURIComponent(`Liberação de Acesso - Monitor Caixa d'Água (${userRecord.email})`);
       const body = encodeURIComponent(
-        `Olá Administrador,\n\nSolicito a liberação de acesso ao aplicativo Monitor Caixa d'Água 5.000L.\n\n` +
+        `Olá Administrador,\n\nSolicito a liberação de acesso ao aplicativo Monitor Caixa d'Água.\n\n` +
         `• Usuário: ${userRecord.username}\n` +
         `• E-mail cadastrado: ${userRecord.email}\n\n` +
         `Por favor, gere o Código de Liberação para este e-mail no painel Admin.`
@@ -564,7 +744,7 @@
       const credential = await navigator.credentials.create({
         publicKey: {
           challenge,
-          rp: { name: "Monitor Caixa d'Água 5000L", id: window.location.hostname || 'localhost' },
+          rp: { name: "Monitor Caixa d'Água", id: window.location.hostname || 'localhost' },
           user: { id: userId, name: username, displayName: username },
           pubKeyCredParams: [
             { type: 'public-key', alg: -7 },
@@ -939,24 +1119,308 @@
     document.getElementById('btnInstallPwaDash').addEventListener('click', triggerPwaInstall);
 
     // ========================================================================
-    // 3. DASHBOARD DA CAIXA D'ÁGUA & DETECÇÃO ONLINE/OFFLINE EM TEMPO REAL
+    // 3. CATÁLOGO DE CAIXAS D'ÁGUA (1.000L PADRÃO + MODELOS COMUNS + SOB MEDIDA)
     // ========================================================================
     const ONLINE_THRESHOLD_SEC = 45;
-    const H_SENSOR = 1.97;
-    const H_MAX_UTIL = 1.45;
-    const H_BORDA = 1.63;
-    const R_BASE = 0.925;
-    const R_TOPO = 1.185;
+    const TANK_CONFIG_STORAGE_KEY = 'caixa_fortlev_tank_config_v1';
 
-    function calcLitros(h) {
-      if (h <= 0) return 0;
-      const hc = Math.min(h, H_BORDA);
-      const k = (R_TOPO - R_BASE) / H_BORDA;
-      const r = R_BASE + k * hc;
-      return (Math.PI * hc / 3.0) * (R_BASE * R_BASE + R_BASE * r + r * r) * 1000.0;
+    // Medidas oficiais baseadas no catálogo técnico Fortlev/Tigre (em centímetros)
+    const TANK_PRESETS = {
+      cone_310: {
+        presetId: 'cone_310',
+        name: "Caixa d'Água Fortlev 310 L",
+        shape: 'cone',
+        dBaseCm: 75,
+        dTopoCm: 103,
+        dCylCm: 88,
+        compCm: 80,
+        largCm: 80,
+        hMaxUtilCm: 50,
+        hBordaCm: 54,
+        hSensorCm: 69
+      },
+      cone_500: {
+        presetId: 'cone_500',
+        name: "Caixa d'Água Fortlev 500 L",
+        shape: 'cone',
+        dBaseCm: 95,
+        dTopoCm: 122,
+        dCylCm: 105,
+        compCm: 100,
+        largCm: 90,
+        hMaxUtilCm: 54,
+        hBordaCm: 58,
+        hSensorCm: 72
+      },
+      cone_750: {
+        presetId: 'cone_750',
+        name: "Caixa d'Água Fortlev 750 L",
+        shape: 'cone',
+        dBaseCm: 100,
+        dTopoCm: 135,
+        dCylCm: 115,
+        compCm: 120,
+        largCm: 100,
+        hMaxUtilCm: 69,
+        hBordaCm: 73,
+        hSensorCm: 86
+      },
+      cone_1000: {
+        presetId: 'cone_1000',
+        name: "Caixa d'Água Fortlev 1.000 L",
+        shape: 'cone',
+        dBaseCm: 116,
+        dTopoCm: 151,
+        dCylCm: 102,
+        compCm: 140,
+        largCm: 110,
+        hMaxUtilCm: 72,
+        hBordaCm: 76,
+        hSensorCm: 97
+      },
+      cone_1500: {
+        presetId: 'cone_1500',
+        name: "Caixa d'Água Fortlev 1.500 L",
+        shape: 'cone',
+        dBaseCm: 143,
+        dTopoCm: 175,
+        dCylCm: 130,
+        compCm: 150,
+        largCm: 130,
+        hMaxUtilCm: 77,
+        hBordaCm: 83,
+        hSensorCm: 105
+      },
+      cone_2000: {
+        presetId: 'cone_2000',
+        name: "Caixa d'Água Fortlev 2.000 L",
+        shape: 'cone',
+        dBaseCm: 166,
+        dTopoCm: 199,
+        dCylCm: 130,
+        compCm: 160,
+        largCm: 125,
+        hMaxUtilCm: 78,
+        hBordaCm: 90,
+        hSensorCm: 112
+      },
+      cone_3000: {
+        presetId: 'cone_3000',
+        name: "Caixa d'Água Fortlev 3.000 L",
+        shape: 'cone',
+        dBaseCm: 170,
+        dTopoCm: 213,
+        dCylCm: 155,
+        compCm: 180,
+        largCm: 150,
+        hMaxUtilCm: 106,
+        hBordaCm: 121,
+        hSensorCm: 149
+      },
+      cone_5000: {
+        presetId: 'cone_5000',
+        name: "Caixa d'Água Fortlev 5.000 L",
+        shape: 'cone',
+        dBaseCm: 185,
+        dTopoCm: 237,
+        dCylCm: 185,
+        compCm: 220,
+        largCm: 160,
+        hMaxUtilCm: 145,
+        hBordaCm: 163,
+        hSensorCm: 197
+      },
+      cyl_500: {
+        presetId: 'cyl_500',
+        name: "Tanque Cilíndrico 500 L",
+        shape: 'cylinder',
+        dBaseCm: 85,
+        dTopoCm: 85,
+        dCylCm: 85,
+        compCm: 85,
+        largCm: 85,
+        hMaxUtilCm: 88,
+        hBordaCm: 98,
+        hSensorCm: 112
+      },
+      cyl_1000: {
+        presetId: 'cyl_1000',
+        name: "Tanque Cilíndrico 1.000 L",
+        shape: 'cylinder',
+        dBaseCm: 102,
+        dTopoCm: 102,
+        dCylCm: 102,
+        compCm: 102,
+        largCm: 102,
+        hMaxUtilCm: 122,
+        hBordaCm: 132,
+        hSensorCm: 147
+      },
+      cyl_2000: {
+        presetId: 'cyl_2000',
+        name: "Tanque Cilíndrico 2.000 L",
+        shape: 'cylinder',
+        dBaseCm: 130,
+        dTopoCm: 130,
+        dCylCm: 130,
+        compCm: 130,
+        largCm: 130,
+        hMaxUtilCm: 151,
+        hBordaCm: 162,
+        hSensorCm: 182
+      },
+      cyl_5000: {
+        presetId: 'cyl_5000',
+        name: "Tanque Cilíndrico 5.000 L",
+        shape: 'cylinder',
+        dBaseCm: 185,
+        dTopoCm: 185,
+        dCylCm: 185,
+        compCm: 185,
+        largCm: 185,
+        hMaxUtilCm: 186,
+        hBordaCm: 200,
+        hSensorCm: 220
+      },
+      rect_500: {
+        presetId: 'rect_500',
+        name: "Caixa Retangular 500 L",
+        shape: 'rectangular',
+        dBaseCm: 100,
+        dTopoCm: 100,
+        dCylCm: 100,
+        compCm: 110,
+        largCm: 90,
+        hMaxUtilCm: 50.5,
+        hBordaCm: 58,
+        hSensorCm: 65
+      },
+      rect_1000: {
+        presetId: 'rect_1000',
+        name: "Caixa Retangular 1.000 L",
+        shape: 'rectangular',
+        dBaseCm: 120,
+        dTopoCm: 120,
+        dCylCm: 120,
+        compCm: 140,
+        largCm: 110,
+        hMaxUtilCm: 65,
+        hBordaCm: 75,
+        hSensorCm: 85
+      },
+      rect_2000: {
+        presetId: 'rect_2000',
+        name: "Cisterna Retangular 2.000 L",
+        shape: 'rectangular',
+        dBaseCm: 140,
+        dTopoCm: 140,
+        dCylCm: 140,
+        compCm: 160,
+        largCm: 125,
+        hMaxUtilCm: 100,
+        hBordaCm: 112,
+        hSensorCm: 125
+      }
+    };
+
+    const SHAPE_LABELS = {
+      cone: 'Tronco de Cone',
+      cylinder: 'Cilíndrica Vertical',
+      rectangular: 'Retangular / Quadrada'
+    };
+
+    function loadSavedTankConfig() {
+      try {
+        const raw = localStorage.getItem(TANK_CONFIG_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.shape && parsed.hBordaCm > 0 && parsed.hMaxUtilCm > 0) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.warn('Falha ao carregar configuração da caixa:', e);
+      }
+      return { ...TANK_PRESETS.cone_1000 };
     }
 
-    const VOL_MAX = calcLitros(H_MAX_UTIL);
+    function saveTankConfig(cfg) {
+      try {
+        localStorage.setItem(TANK_CONFIG_STORAGE_KEY, JSON.stringify(cfg));
+      } catch (e) {
+        console.warn('Falha ao salvar configuração da caixa:', e);
+      }
+    }
+
+    let activeTank = loadSavedTankConfig();
+    let draftShape = activeTank.shape;
+    let lastRawFeed = null;
+
+    function calcLitrosForConfig(hM, cfg) {
+      if (hM <= 0) return 0;
+      const hBordaM = Math.max(0.05, cfg.hBordaCm / 100.0);
+      const hc = Math.min(hM, hBordaM);
+
+      if (cfg.shape === 'cylinder') {
+        const r = Math.max(0.05, (cfg.dCylCm / 100.0) / 2.0);
+        return Math.PI * r * r * hc * 1000.0;
+      } else if (cfg.shape === 'rectangular') {
+        const compM = Math.max(0.05, cfg.compCm / 100.0);
+        const largM = Math.max(0.05, cfg.largCm / 100.0);
+        return compM * largM * hc * 1000.0;
+      } else {
+        // Tronco de Cone (padrão Fortlev/Tigre)
+        const rBase = Math.max(0.05, (cfg.dBaseCm / 100.0) / 2.0);
+        const rTopo = Math.max(0.05, (cfg.dTopoCm / 100.0) / 2.0);
+        const k = (rTopo - rBase) / hBordaM;
+        const r = rBase + k * hc;
+        return (Math.PI * hc / 3.0) * (rBase * rBase + rBase * r + r * r) * 1000.0;
+      }
+    }
+
+    function calcLitros(hM) {
+      return calcLitrosForConfig(hM, activeTank);
+    }
+
+    function getVolMax(cfg = activeTank) {
+      return Math.max(1, calcLitrosForConfig(cfg.hMaxUtilCm / 100.0, cfg));
+    }
+
+    function formatDimsSummary(cfg) {
+      let horiz = '';
+      if (cfg.shape === 'cylinder') {
+        horiz = `Ø Cilindro: ${cfg.dCylCm} cm`;
+      } else if (cfg.shape === 'rectangular') {
+        horiz = `Base: ${cfg.compCm} × ${cfg.largCm} cm`;
+      } else {
+        horiz = `Ø Base: ${cfg.dBaseCm} cm • Ø Topo: ${cfg.dTopoCm} cm`;
+      }
+      return `${horiz} • Boia (100%): ${cfg.hMaxUtilCm} cm • Borda: ${cfg.hBordaCm} cm • Sensor: ${cfg.hSensorCm} cm`;
+    }
+
+    function generateEspConfigSnippet(cfg) {
+      const hSensorM = (cfg.hSensorCm / 100.0).toFixed(3);
+      const hMaxM = (cfg.hMaxUtilCm / 100.0).toFixed(3);
+      const hBordaM = (cfg.hBordaCm / 100.0).toFixed(3);
+      const rBaseM = ((cfg.shape === 'cylinder' ? cfg.dCylCm : cfg.dBaseCm) / 200.0).toFixed(3);
+      const rTopoM = ((cfg.shape === 'cylinder' ? cfg.dCylCm : cfg.dTopoCm) / 200.0).toFixed(3);
+      const compM = (cfg.compCm / 100.0).toFixed(3);
+      const largM = (cfg.largCm / 100.0).toFixed(3);
+      const shapeId = cfg.shape === 'cylinder' ? 2 : (cfg.shape === 'rectangular' ? 3 : 1);
+
+      return [
+        `// Geometria da Caixa: ${cfg.name} (${SHAPE_LABELS[cfg.shape]})`,
+        `#define FORMATO_CAIXA       ${shapeId}        // 1 = Tronco de Cone, 2 = Cilíndrica, 3 = Retangular`,
+        `#define H_SENSOR_M          ${hSensorM}f   // Altura do sensor até o fundo (${cfg.hSensorCm} cm)`,
+        `#define H_MAX_UTIL_M        ${hMaxM}f   // Altura máxima útil / boia (${cfg.hMaxUtilCm} cm)`,
+        `#define H_BORDA_M           ${hBordaM}f   // Altura da borda sem tampa (${cfg.hBordaCm} cm)`,
+        `#define R_BASE_M            ${rBaseM}f   // Raio da base (m)`,
+        `#define R_TOPO_M            ${rTopoM}f   // Raio do topo (m)`,
+        `#define COMPRIMENTO_M       ${compM}f   // Comprimento p/ caixa retangular (m)`,
+        `#define LARGURA_M           ${largM}f   // Largura p/ caixa retangular (m)`
+      ].join('\n');
+    }
+
     const canvas = document.getElementById('tankCanvas');
     const ctx = canvas.getContext('2d');
     const chkSim = document.getElementById('chkSim');
@@ -967,6 +1431,201 @@
     let phase = 0;
     let lastPacketDate = null;
     let isEspOnline = false;
+
+    function syncShapeFieldsVisibility(shape) {
+      draftShape = shape;
+      const isCone = shape === 'cone';
+      const isCyl = shape === 'cylinder';
+      const isRect = shape === 'rectangular';
+
+      document.getElementById('fieldWrapConeBase').classList.toggle('hidden', !isCone);
+      document.getElementById('fieldWrapConeTopo').classList.toggle('hidden', !isCone);
+      document.getElementById('fieldWrapCylDiam').classList.toggle('hidden', !isCyl);
+      document.getElementById('fieldWrapRectComp').classList.toggle('hidden', !isRect);
+      document.getElementById('fieldWrapRectLarg').classList.toggle('hidden', !isRect);
+
+      document.querySelectorAll('[data-shape-btn]').forEach(btn => {
+        const s = btn.getAttribute('data-shape-btn');
+        if (s === shape) {
+          btn.className = 'px-2.5 py-1.5 rounded-lg font-semibold transition bg-sky-600 text-white';
+        } else {
+          btn.className = 'px-2.5 py-1.5 rounded-lg font-semibold transition text-slate-400 hover:text-white';
+        }
+      });
+    }
+
+    function readDraftConfigFromInputs() {
+      const presetVal = document.getElementById('selectTankPreset').value;
+      return {
+        presetId: presetVal,
+        name: document.getElementById('inpTankName').value.trim() || "Caixa d'Água Personalizada",
+        shape: draftShape,
+        dBaseCm: Math.max(10, parseFloat(document.getElementById('inpDBaseCm').value) || 116),
+        dTopoCm: Math.max(10, parseFloat(document.getElementById('inpDTopoCm').value) || 151),
+        dCylCm: Math.max(10, parseFloat(document.getElementById('inpDCylCm').value) || 102),
+        compCm: Math.max(10, parseFloat(document.getElementById('inpCompCm').value) || 140),
+        largCm: Math.max(10, parseFloat(document.getElementById('inpLargCm').value) || 110),
+        hMaxUtilCm: Math.max(5, parseFloat(document.getElementById('inpHMaxUtilCm').value) || 72),
+        hBordaCm: Math.max(5, parseFloat(document.getElementById('inpHBordaCm').value) || 76),
+        hSensorCm: Math.max(10, parseFloat(document.getElementById('inpHSensorCm').value) || 97)
+      };
+    }
+
+    function updateDraftPreviewUI() {
+      const draft = readDraftConfigFromInputs();
+      const volUtil = calcLitrosForConfig(draft.hMaxUtilCm / 100.0, draft);
+      const volBorda = calcLitrosForConfig(draft.hBordaCm / 100.0, draft);
+      const gapCm = draft.hSensorCm - draft.hMaxUtilCm;
+
+      document.getElementById('previewVolUtil').textContent = Math.round(volUtil).toLocaleString('pt-BR') + ' L';
+      document.getElementById('previewVolBorda').textContent = Math.round(volBorda).toLocaleString('pt-BR') + ' L';
+
+      const gapEl = document.getElementById('previewSensorGap');
+      if (gapCm < 22) {
+        gapEl.textContent = `⚠️ Atenção: Folga sensor ↔ água cheia é de ${gapCm.toFixed(1)} cm (menor que a zona cega de 22 cm do JSN-SR04T!)`;
+        gapEl.className = 'text-[11px] text-amber-400 font-medium';
+      } else {
+        gapEl.textContent = `✅ Folga sensor ↔ água cheia: ${gapCm.toFixed(1)} cm (ideal para o sensor JSN-SR04T, mín. 22 cm)`;
+        gapEl.className = 'text-[11px] text-emerald-400';
+      }
+
+      document.getElementById('espConfigSnippetPre').textContent = generateEspConfigSnippet(draft);
+    }
+
+    function populateInputsFromConfig(cfg) {
+      const selectEl = document.getElementById('selectTankPreset');
+      if (cfg.presetId && TANK_PRESETS[cfg.presetId]) {
+        selectEl.value = cfg.presetId;
+      } else {
+        selectEl.value = 'custom';
+      }
+
+      document.getElementById('inpTankName').value = cfg.name;
+      document.getElementById('inpDBaseCm').value = cfg.dBaseCm;
+      document.getElementById('inpDTopoCm').value = cfg.dTopoCm;
+      document.getElementById('inpDCylCm').value = cfg.dCylCm;
+      document.getElementById('inpCompCm').value = cfg.compCm;
+      document.getElementById('inpLargCm').value = cfg.largCm;
+      document.getElementById('inpHMaxUtilCm').value = cfg.hMaxUtilCm;
+      document.getElementById('inpHBordaCm').value = cfg.hBordaCm;
+      document.getElementById('inpHSensorCm').value = cfg.hSensorCm;
+
+      syncShapeFieldsVisibility(cfg.shape);
+      updateDraftPreviewUI();
+    }
+
+    function applyActiveTankToUI() {
+      const volUtil = Math.round(getVolMax(activeTank));
+      document.title = `${activeTank.name} — App Seguro`;
+      document.getElementById('authTankTitle').textContent = activeTank.name;
+      document.getElementById('dashTankTitle').textContent = activeTank.name;
+      document.getElementById('activeShapeBadge').textContent = SHAPE_LABELS[activeTank.shape] || 'Tronco de Cone';
+      document.getElementById('activeDimsSummary').textContent = formatDimsSummary(activeTank);
+
+      document.getElementById('labelCapUtil').textContent = `Capacidade útil: ${volUtil.toLocaleString('pt-BR')} L`;
+      document.getElementById('labelBoiaCm').textContent = `Boia / Entrada: ${activeTank.hMaxUtilCm} cm`;
+      document.getElementById('labelSensorCm').textContent = `Topo da tampa: ${activeTank.hSensorCm} cm`;
+
+      // Atualiza limites do controle deslizante de simulação
+      const maxSimCm = Math.max(10, Math.round(activeTank.hBordaCm));
+      slider.max = String(maxSimCm);
+      if (parseFloat(slider.value) > maxSimCm || !chkSim.checked) {
+        slider.value = String(Math.round(activeTank.hMaxUtilCm * 0.8));
+      }
+
+      if (chkSim.checked) {
+        applySimSlider();
+      } else if (lastRawFeed) {
+        recalculateAndRenderFromFeed(lastRawFeed);
+      }
+    }
+
+    // Eventos do Seletor de Modelos e Painel de Ajuste
+    document.getElementById('selectTankPreset').addEventListener('change', (e) => {
+      const val = e.target.value;
+      const customPanel = document.getElementById('customDimsPanel');
+      if (val === 'custom') {
+        customPanel.classList.remove('hidden');
+        activeTank.presetId = 'custom';
+        saveTankConfig(activeTank);
+        updateDraftPreviewUI();
+      } else if (TANK_PRESETS[val]) {
+        activeTank = { ...TANK_PRESETS[val] };
+        saveTankConfig(activeTank);
+        populateInputsFromConfig(activeTank);
+        applyActiveTankToUI();
+      }
+    });
+
+    document.getElementById('btnToggleCustomDims').addEventListener('click', () => {
+      const panel = document.getElementById('customDimsPanel');
+      panel.classList.toggle('hidden');
+      populateInputsFromConfig(activeTank);
+    });
+
+    document.querySelectorAll('[data-shape-btn]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const newShape = btn.getAttribute('data-shape-btn');
+        syncShapeFieldsVisibility(newShape);
+        updateDraftPreviewUI();
+      });
+    });
+
+    [
+      'inpTankName', 'inpDBaseCm', 'inpDTopoCm', 'inpDCylCm',
+      'inpCompCm', 'inpLargCm', 'inpHMaxUtilCm', 'inpHBordaCm', 'inpHSensorCm'
+    ].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        updateDraftPreviewUI();
+      });
+    });
+
+    document.getElementById('btnSaveCustomDims').addEventListener('click', () => {
+      const draft = readDraftConfigFromInputs();
+      // Verifica se houve alteração em relação ao preset selecionado
+      const basePreset = TANK_PRESETS[draft.presetId];
+      if (basePreset) {
+        const changed =
+          draft.shape !== basePreset.shape ||
+          draft.dBaseCm !== basePreset.dBaseCm ||
+          draft.dTopoCm !== basePreset.dTopoCm ||
+          draft.dCylCm !== basePreset.dCylCm ||
+          draft.compCm !== basePreset.compCm ||
+          draft.largCm !== basePreset.largCm ||
+          draft.hMaxUtilCm !== basePreset.hMaxUtilCm ||
+          draft.hBordaCm !== basePreset.hBordaCm ||
+          draft.hSensorCm !== basePreset.hSensorCm;
+        if (changed && draft.name === basePreset.name) {
+          draft.name = `${basePreset.name} (Ajustada)`;
+          document.getElementById('inpTankName').value = draft.name;
+        }
+      }
+      activeTank = draft;
+      saveTankConfig(activeTank);
+      applyActiveTankToUI();
+    });
+
+    document.getElementById('btnResetPresetDims').addEventListener('click', () => {
+      const sel = document.getElementById('selectTankPreset').value;
+      const presetKey = TANK_PRESETS[sel] ? sel : 'cone_1000';
+      activeTank = { ...TANK_PRESETS[presetKey] };
+      document.getElementById('selectTankPreset').value = presetKey;
+      saveTankConfig(activeTank);
+      populateInputsFromConfig(activeTank);
+      applyActiveTankToUI();
+    });
+
+    document.getElementById('btnShowEspCode').addEventListener('click', () => {
+      updateDraftPreviewUI();
+      document.getElementById('espConfigSnippetBox').classList.toggle('hidden');
+    });
+
+    document.getElementById('btnCopyEspCode').addEventListener('click', () => {
+      const code = document.getElementById('espConfigSnippetPre').textContent;
+      if (!code) return;
+      navigator.clipboard.writeText(code);
+      alert('Configuração copiada! Cole no arquivo config.h do ESP32-S3.');
+    });
 
     function formatElapsed(sec) {
       if (sec < 60) return `${Math.floor(sec)}s atrás`;
@@ -1060,9 +1719,9 @@
       const hCm = parseFloat(slider.value);
       const hM = hCm / 100.0;
       targetHeightM = hM;
-      const dCm = (H_SENSOR - hM) * 100.0;
+      const dCm = Math.max(0, activeTank.hSensorCm - hCm);
       const litros = calcLitros(hM);
-      const pct = (litros / VOL_MAX) * 100.0;
+      const pct = (litros / getVolMax()) * 100.0;
       renderNumbers(pct, litros, hCm, dCm, null, null, true);
     }
 
@@ -1072,12 +1731,44 @@
         applySimSlider();
       } else {
         slider.classList.add('hidden');
-        fetchThingSpeak();
+        if (lastRawFeed) {
+          recalculateAndRenderFromFeed(lastRawFeed);
+        } else {
+          fetchThingSpeak();
+        }
       }
     });
 
     slider.addEventListener('input', applySimSlider);
     document.getElementById('btnRefresh').addEventListener('click', fetchThingSpeak);
+
+    // Recalcula altura da água, volume em litros e porcentagem usando a geometria da caixa selecionada
+    function recalculateAndRenderFromFeed(feed) {
+      if (chkSim.checked) return;
+      const { distCm, altCm: rawAltCm, tempC, rssi } = feed;
+
+      if (distCm > 0) {
+        document.getElementById('sensorAlert').classList.add('hidden');
+        const altCm = Math.max(0, activeTank.hSensorCm - distCm);
+        const hM = altCm / 100.0;
+        const litros = calcLitros(hM);
+        const pct = (litros / getVolMax()) * 100.0;
+        targetHeightM = hM;
+        renderNumbers(pct, litros, altCm, distCm, tempC, rssi, false);
+      } else if (rawAltCm >= 0) {
+        document.getElementById('sensorAlert').classList.add('hidden');
+        const hM = rawAltCm / 100.0;
+        const litros = calcLitros(hM);
+        const pct = (litros / getVolMax()) * 100.0;
+        const dCm = Math.max(0, activeTank.hSensorCm - rawAltCm);
+        targetHeightM = hM;
+        renderNumbers(pct, litros, rawAltCm, dCm, tempC, rssi, false);
+      } else {
+        document.getElementById('sensorAlert').classList.remove('hidden');
+        targetHeightM = 0;
+        renderNumbers(-1, -1, -1, -1, tempC, rssi, false);
+      }
+    }
 
     async function fetchThingSpeak() {
       if (!currentSessionUser || !unlockedReadApiKey) return;
@@ -1093,22 +1784,13 @@
         const tempC = parseFloat(data.field5);
         const rssi = parseInt(data.field6, 10);
 
+        lastRawFeed = { pct, litros, distCm, altCm, tempC, rssi };
+
         if (data.created_at) {
           lastPacketDate = new Date(data.created_at);
         }
         updateConnectionStatusUI();
-
-        if (!chkSim.checked) {
-          if (pct >= 0 && altCm >= 0) {
-            document.getElementById('sensorAlert').classList.add('hidden');
-            targetHeightM = altCm / 100.0;
-            renderNumbers(pct, litros, altCm, distCm, tempC, rssi, false);
-          } else {
-            document.getElementById('sensorAlert').classList.remove('hidden');
-            targetHeightM = 0;
-            renderNumbers(-1, -1, -1, -1, tempC, rssi, false);
-          }
-        }
+        recalculateAndRenderFromFeed(lastRawFeed);
       } catch (e) {
         console.error('Erro ao buscar ThingSpeak:', e);
       }
@@ -1123,10 +1805,27 @@
         const botY = 242;
         const tankH = botY - topY;
         const cx = 140;
-        const topHalfW = 104;
-        const botHalfW = 80;
 
-        const ratio = Math.min(Math.max(currentHeightM / H_BORDA, 0), 1);
+        const shape = activeTank.shape || 'cone';
+        let topHalfW = 104;
+        let botHalfW = 80;
+
+        if (shape === 'cylinder') {
+          topHalfW = 86;
+          botHalfW = 86;
+        } else if (shape === 'rectangular') {
+          topHalfW = 102;
+          botHalfW = 102;
+        } else {
+          // Proporção fiel entre base e topo do tronco de cone
+          const ratioBaseTop = Math.max(0.58, Math.min(1.0, activeTank.dBaseCm / Math.max(1, activeTank.dTopoCm)));
+          topHalfW = 104;
+          botHalfW = Math.round(topHalfW * ratioBaseTop);
+        }
+
+        const hBordaM = Math.max(0.05, activeTank.hBordaCm / 100.0);
+        const hMaxM = Math.max(0.05, activeTank.hMaxUtilCm / 100.0);
+        const ratio = Math.min(Math.max(currentHeightM / hBordaM, 0), 1);
         const waterY = botY - ratio * tankH;
 
         ctx.save();
@@ -1170,16 +1869,42 @@
           ctx.fill();
         }
 
-        const maxY = botY - (H_MAX_UTIL / H_BORDA) * tankH;
+        // Anéis estruturais suaves para tanque cilíndrico ou grade de alvenaria para retangular
+        if (shape === 'cylinder') {
+          ctx.strokeStyle = 'rgba(148, 163, 184, 0.16)';
+          ctx.lineWidth = 1.5;
+          for (let r = 0.25; r <= 0.75; r += 0.25) {
+            const ry = topY + tankH * r;
+            ctx.beginPath();
+            ctx.moveTo(cx - topHalfW, ry);
+            ctx.lineTo(cx + topHalfW, ry);
+            ctx.stroke();
+          }
+        } else if (shape === 'rectangular') {
+          ctx.strokeStyle = 'rgba(148, 163, 184, 0.14)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(cx, topY);
+          ctx.lineTo(cx, botY);
+          ctx.stroke();
+        }
+
+        // Linha tracejada do nível máximo útil (Boia = 100%)
+        const maxY = botY - Math.min(1, hMaxM / hBordaM) * tankH;
         ctx.setLineDash([5, 5]);
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.6)';
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.7)';
         ctx.beginPath();
         ctx.moveTo(cx - topHalfW, maxY);
         ctx.lineTo(cx + topHalfW, maxY);
         ctx.stroke();
         ctx.setLineDash([]);
+
+        ctx.fillStyle = 'rgba(226, 232, 240, 0.75)';
+        ctx.font = '10px monospace';
+        ctx.fillText(`100% (${activeTank.hMaxUtilCm}cm)`, cx - topHalfW + 8, Math.max(topY + 12, maxY - 5));
         ctx.restore();
 
+        // Contorno do corpo da caixa
         ctx.strokeStyle = isEspOnline ? '#38bdf8' : '#64748b';
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -1190,27 +1915,38 @@
         ctx.closePath();
         ctx.stroke();
 
+        // Tampa superior de acordo com o formato
         ctx.beginPath();
-        ctx.moveTo(cx - topHalfW - 6, topY);
-        ctx.quadraticCurveTo(cx, topY - 44, cx + topHalfW + 6, topY);
-        ctx.closePath();
+        if (shape === 'rectangular') {
+          ctx.rect(cx - topHalfW - 6, topY - 18, (topHalfW + 6) * 2, 18);
+        } else if (shape === 'cylinder') {
+          ctx.moveTo(cx - topHalfW - 4, topY);
+          ctx.quadraticCurveTo(cx, topY - 32, cx + topHalfW + 4, topY);
+          ctx.closePath();
+        } else {
+          ctx.moveTo(cx - topHalfW - 6, topY);
+          ctx.quadraticCurveTo(cx, topY - 44, cx + topHalfW + 6, topY);
+          ctx.closePath();
+        }
         ctx.fillStyle = 'rgba(51, 65, 85, 0.5)';
         ctx.fill();
         ctx.strokeStyle = isEspOnline ? '#38bdf8' : '#64748b';
         ctx.lineWidth = 2.5;
         ctx.stroke();
 
+        // Sensor Ultrassônico JSN-SR04T no topo da tampa
+        const sensorY = shape === 'rectangular' ? (topY - 16) : (shape === 'cylinder' ? (topY - 21) : (topY - 27));
         ctx.fillStyle = isEspOnline ? '#38bdf8' : '#ef4444';
-        ctx.fillRect(cx - 12, topY - 27, 24, 9);
+        ctx.fillRect(cx - 12, sensorY, 24, 9);
 
         if (isEspOnline || chkSim.checked) {
           ctx.setLineDash([3, 4]);
           ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
           ctx.lineWidth = 1.5;
           ctx.beginPath();
-          ctx.moveTo(cx, topY - 18);
+          ctx.moveTo(cx, sensorY + 9);
           ctx.lineTo(cx - 22, waterY);
-          ctx.moveTo(cx, topY - 18);
+          ctx.moveTo(cx, sensorY + 9);
           ctx.lineTo(cx + 22, waterY);
           ctx.stroke();
           ctx.setLineDash([]);
@@ -1221,6 +1957,8 @@
       requestAnimationFrame(drawTank);
     }
 
+    populateInputsFromConfig(activeTank);
+    applyActiveTankToUI();
     switchAuthTab('login');
     setInterval(fetchThingSpeak, 10000);
     setInterval(updateConnectionStatusUI, 1000);

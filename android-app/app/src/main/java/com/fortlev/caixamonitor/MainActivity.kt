@@ -94,7 +94,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val title = TextView(this).apply {
-            text = "💧 Caixa d'Água 5.000 L"
+            text = "💧 Caixa d'Água 1.000 L"
             textSize = 22f
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER

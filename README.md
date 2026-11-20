@@ -1,6 +1,6 @@
 # Monitor de Caixa d'Água (ESP32-S3 + JSN-SR04T + Energia Solar + Home Assistant)
 
-Sistema de monitoramento de nível de caixa d'água (**Fortlev 5.000 L**, formato tronco de cone) alimentado por energia solar e baterias 18650, com integração direta via API ao **Home Assistant (ZimaOS)**, além de suporte opcional a **Telegram** e **ThingSpeak**.
+Sistema de monitoramento de nível de caixa d'água (padrão **Fortlev 1.000 L**, com seletor integrado para modelos de **310 L a 5.000 L** nos formatos **Tronco de Cone**, **Cilíndrica Vertical** e **Retangular**, além de ajuste sob medida) alimentado por energia solar e baterias 18650, com integração direta via API ao **Home Assistant (ZimaOS)**, **Telegram** e **ThingSpeak**.
 
 ## Lista Exata de Componentes
 
@@ -81,35 +81,37 @@ Assim que o ESP32-S3 fizer a primeira leitura, estas 6 entidades aparecerão em 
 
 ---
 
-## 4. Geometria da Caixa d'Água (Fortlev 5.000 L, tronco de cone)
+## 4. Geometria da Caixa d'Água (Padrão: Fortlev 1.000 L + Seletor Multi-Modelos)
 
 ```text
-             ___________  ← topo da tampa: 2,00 m  ← SENSOR AQUI (centro da tampa)
-           /             \
-  1,63 m  |=====================|  ← borda (Ø 2,37 m)
-          |  ⊐ entrada  ~1,45 m |  ← cano de entrada (15–20 cm abaixo da borda) = NÍVEL MÁXIMO
-           \~~~~~~~~~~~~~~~~~~~/
-            \                 /
-             \_______________/    ← base (Ø 1,85 m) = 0 m
+              ___________  ← topo da tampa: 0,97 m (97 cm) ← SENSOR AQUI (centro da tampa)
+            /             \
+   0,76 m  |=====================|  ← borda sem tampa (Ø 1,51 m)
+           |  ⊐ entrada  ~0,72 m |  ← boia / entrada (~1.000 L = 100%)
+            \~~~~~~~~~~~~~~~~~~~/
+             \                 /
+              \_______________/    ← base (Ø 1,16 m) = 0 m
 ```
 
-| Parâmetro | Valor |
+| Parâmetro (Fortlev 1.000 L) | Valor |
 |---|---|
-| Volume geométrico até a borda (1,63 m) | ~5.728 L |
-| **Nível máximo útil** (h ≈ 1,45 m, na altura da entrada) | **~4.953 L** |
-| Raio em função da altura | `r(h) = 0,925 + 0,1595·h` (m) |
-| Volume até a altura h | `V(h) = π·h/3 · (0,925² + 0,925·r(h) + r(h)²)` × 1000 L |
+| Volume geométrico até a borda (0,76 m) | ~1.070 L |
+| **Nível máximo útil** (h = 0,72 m, na altura da boia) | **~1.000 L** |
+| Raio em função da altura | `r(h) = 0,580 + 0,2303·h` (m) |
+| Volume até a altura h | `V(h) = π·h/3 · (0,580² + 0,580·r(h) + r(h)²)` × 1000 L |
 
-### Tabela nível × volume (100% = 1,45 m)
+### Modelos Pré-Configurados no Seletor do App e no Bot do Telegram (`/modelo <litros>`)
 
-| Altura da água | Litros | % |
-|---|---|---|
-| 0,20 m | 556 | 11% |
-| 0,40 m | 1.151 | 23% |
-| 0,60 m | 1.785 | 36% |
-| 0,80 m | 2.461 | 50% |
-| 1,00 m | 3.178 | 64% |
-| 1,20 m | 3.939 | 80% |
-| 1,30 m | 4.336 | 88% |
-| 1,40 m | 4.745 | 96% |
-| 1,45 m | 4.953 | 100% |
+| Modelo | Formato | Ø Base / Comp. | Ø Topo / Larg. | Altura Boia (100%) | Altura Borda | Altura Sensor |
+|---|---|---|---|---|---|---|
+| **310 L** | Tronco de Cone | 75 cm | 103 cm | 50 cm | 54 cm | 69 cm |
+| **500 L** | Tronco de Cone | 95 cm | 122 cm | 54 cm | 58 cm | 72 cm |
+| **750 L** | Tronco de Cone | 100 cm | 135 cm | 69 cm | 73 cm | 86 cm |
+| **1.000 L (Padrão)** | **Tronco de Cone** | **116 cm** | **151 cm** | **72 cm** | **76 cm** | **97 cm** |
+| **1.500 L** | Tronco de Cone | 143 cm | 175 cm | 77 cm | 83 cm | 105 cm |
+| **2.000 L** | Tronco de Cone | 166 cm | 199 cm | 78 cm | 90 cm | 112 cm |
+| **3.000 L** | Tronco de Cone | 170 cm | 213 cm | 106 cm | 121 cm | 149 cm |
+| **5.000 L** | Tronco de Cone | 185 cm | 237 cm | 145 cm | 163 cm | 197 cm |
+| **500 L a 5.000 L** | Cilíndrica Vertical | Ø 85 a 185 cm | — | 88 a 186 cm | 98 a 200 cm | 112 a 220 cm |
+| **500 L a 2.000 L** | Retangular / Cisterna | 110 a 160 cm | 90 a 125 cm | 50,5 a 100 cm | 58 a 112 cm | 65 a 125 cm |
+| **Personalizado** | Qualquer formato | Ajustável | Ajustável | Ajustável | Ajustável | Ajustável |

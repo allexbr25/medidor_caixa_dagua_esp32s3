@@ -1,7 +1,7 @@
 {
-  "name": "Monitor Caixa d'Água 5.000L",
-  "short_name": "Caixa 5000L",
-  "description": "Monitoramento em tempo real da Caixa d'Água Fortlev 5.000L via ESP32-S3 com autenticação biométrica.",
+  "name": "Monitor Caixa d'Água 1.000L",
+  "short_name": "Caixa 1000L",
+  "description": "Monitoramento em tempo real da Caixa d'Água Fortlev 1.000L (com seletor de tamanhos e formatos) via ESP32-S3 com autenticação biométrica.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#020617",

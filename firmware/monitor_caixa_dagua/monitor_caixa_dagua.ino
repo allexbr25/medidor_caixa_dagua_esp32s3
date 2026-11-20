@@ -1,9 +1,10 @@
 /**
- * Monitor de Caixa d'Água (5.000L Fortlev) com Energia Solar
+ * Monitor de Caixa d'Água (Padrão 1.000L Fortlev + Seletor de Modelos/Formatos) com Energia Solar
  * Integrações: ThingSpeak + Bot Interativo do Telegram + Home Assistant (ZimaOS)
  *
  * Comandos disponíveis no Bot do Telegram:
  *   /nivel ou /status -> Mede na hora e responde com Nível (%), Litros, Distância, Temp e Wi-Fi
+ *   /modelo <litros>  -> Alterna o modelo da caixa (310, 500, 750, 1000, 1500, 2000, 3000, 5000)
  *   /continuo         -> Mantém o ESP32-S3 online respondendo em tempo real (2s)
  *   /economia         -> Ativa o modo Deep Sleep (responde comandos pendentes a cada ciclo de 5 min)
  *   /ajuda ou /start  -> Exibe a lista de comandos e o seu Chat ID
@@ -19,6 +20,19 @@
   #include "config.h"
 #else
   #include "config.example.h"
+#endif
+
+#ifndef FORMATO_CAIXA
+  #define FORMATO_CAIXA 1
+#endif
+#ifndef NOME_CAIXA
+  #define NOME_CAIXA "1.000 L"
+#endif
+#ifndef COMPRIMENTO_M
+  #define COMPRIMENTO_M 1.400f
+#endif
+#ifndef LARGURA_M
+  #define LARGURA_M 1.100f
 #endif
 
 // ============================================================================
@@ -38,6 +52,17 @@ RTC_DATA_ATTR bool     alertaTempAltaEnv   = false;
 RTC_DATA_ATTR bool     modoContinuoAtivo   = TELEGRAM_SEMPRE_ONLINE_PADRAO;
 RTC_DATA_ATTR long     lastTelegramUpdate  = 0;
 
+// Geometria ativa persistente em RTC (inicializada com os valores do config.h)
+RTC_DATA_ATTR int      formatoAtivo        = FORMATO_CAIXA; // 1=Tronco de Cone, 2=Cilíndrica, 3=Retangular
+RTC_DATA_ATTR float    hSensorAtivoM       = H_SENSOR_M;
+RTC_DATA_ATTR float    hMaxUtilAtivoM      = H_MAX_UTIL_M;
+RTC_DATA_ATTR float    hBordaAtivoM        = H_BORDA_M;
+RTC_DATA_ATTR float    rBaseAtivoM         = R_BASE_M;
+RTC_DATA_ATTR float    rTopoAtivoM         = R_TOPO_M;
+RTC_DATA_ATTR float    compAtivoM          = COMPRIMENTO_M;
+RTC_DATA_ATTR float    largAtivoM          = LARGURA_M;
+RTC_DATA_ATTR char     nomeCaixaAtiva[24]  = NOME_CAIXA;
+
 WiFiClientSecure telegramClient;
 UniversalTelegramBot bot(TELEGRAM_BOT_TOKEN, telegramClient);
 
@@ -54,14 +79,72 @@ struct Medicao {
 };
 
 // ============================================================================
-// CÁLCULO DE VOLUME (Tronco de Cone - Caixa Fortlev 5.000L)
+// CÁLCULO DE VOLUME (Suporta Tronco de Cone, Cilíndrica e Retangular)
 // ============================================================================
 float calcularVolumeLitros(float h) {
   if (h <= 0.0f) return 0.0f;
-  if (h > H_BORDA_M) h = H_BORDA_M;
-  const float k = (R_TOPO_M - R_BASE_M) / H_BORDA_M; // ~0.1595
-  const float r = R_BASE_M + k * h;
-  return (PI * h / 3.0f) * (R_BASE_M * R_BASE_M + R_BASE_M * r + r * r) * 1000.0f;
+  if (h > hBordaAtivoM) h = hBordaAtivoM;
+
+  if (formatoAtivo == 2) {
+    // Cilíndrica Vertical
+    return PI * rBaseAtivoM * rBaseAtivoM * h * 1000.0f;
+  } else if (formatoAtivo == 3) {
+    // Retangular / Quadrada
+    return compAtivoM * largAtivoM * h * 1000.0f;
+  } else {
+    // Tronco de Cone (padrão Fortlev/Tigre)
+    const float k = (rTopoAtivoM - rBaseAtivoM) / hBordaAtivoM;
+    const float r = rBaseAtivoM + k * h;
+    return (PI * h / 3.0f) * (rBaseAtivoM * rBaseAtivoM + rBaseAtivoM * r + r * r) * 1000.0f;
+  }
+}
+
+bool aplicarPresetPorLitros(int litros) {
+  formatoAtivo = 1;
+  switch (litros) {
+    case 310:
+      hSensorAtivoM = 0.690f; hMaxUtilAtivoM = 0.500f; hBordaAtivoM = 0.540f;
+      rBaseAtivoM   = 0.375f; rTopoAtivoM    = 0.515f;
+      snprintf(nomeCaixaAtiva, sizeof(nomeCaixaAtiva), "310 L");
+      return true;
+    case 500:
+      hSensorAtivoM = 0.720f; hMaxUtilAtivoM = 0.540f; hBordaAtivoM = 0.580f;
+      rBaseAtivoM   = 0.475f; rTopoAtivoM    = 0.610f;
+      snprintf(nomeCaixaAtiva, sizeof(nomeCaixaAtiva), "500 L");
+      return true;
+    case 750:
+      hSensorAtivoM = 0.860f; hMaxUtilAtivoM = 0.690f; hBordaAtivoM = 0.730f;
+      rBaseAtivoM   = 0.500f; rTopoAtivoM    = 0.675f;
+      snprintf(nomeCaixaAtiva, sizeof(nomeCaixaAtiva), "750 L");
+      return true;
+    case 1000:
+      hSensorAtivoM = 0.970f; hMaxUtilAtivoM = 0.720f; hBordaAtivoM = 0.760f;
+      rBaseAtivoM   = 0.580f; rTopoAtivoM    = 0.755f;
+      snprintf(nomeCaixaAtiva, sizeof(nomeCaixaAtiva), "1.000 L");
+      return true;
+    case 1500:
+      hSensorAtivoM = 1.050f; hMaxUtilAtivoM = 0.770f; hBordaAtivoM = 0.830f;
+      rBaseAtivoM   = 0.715f; rTopoAtivoM    = 0.875f;
+      snprintf(nomeCaixaAtiva, sizeof(nomeCaixaAtiva), "1.500 L");
+      return true;
+    case 2000:
+      hSensorAtivoM = 1.120f; hMaxUtilAtivoM = 0.780f; hBordaAtivoM = 0.900f;
+      rBaseAtivoM   = 0.830f; rTopoAtivoM    = 0.995f;
+      snprintf(nomeCaixaAtiva, sizeof(nomeCaixaAtiva), "2.000 L");
+      return true;
+    case 3000:
+      hSensorAtivoM = 1.490f; hMaxUtilAtivoM = 1.060f; hBordaAtivoM = 1.210f;
+      rBaseAtivoM   = 0.850f; rTopoAtivoM    = 1.065f;
+      snprintf(nomeCaixaAtiva, sizeof(nomeCaixaAtiva), "3.000 L");
+      return true;
+    case 5000:
+      hSensorAtivoM = 1.970f; hMaxUtilAtivoM = 1.450f; hBordaAtivoM = 1.630f;
+      rBaseAtivoM   = 0.925f; rTopoAtivoM    = 1.185f;
+      snprintf(nomeCaixaAtiva, sizeof(nomeCaixaAtiva), "5.000 L");
+      return true;
+    default:
+      return false;
+  }
 }
 
 // ============================================================================
@@ -81,8 +164,8 @@ float medirDistanciaMetros() {
     unsigned long duracaoUs = pulseIn(PIN_JSN_ECHO, HIGH, 35000UL);
     if (duracaoUs > 0) {
       float d = (duracaoUs * 0.000343f) / 2.0f;
-      // Descarta leituras na zona cega (< 0,22 m) ou maiores que a caixa (> 2,30 m)
-      if (d >= 0.22f && d <= 2.30f) {
+      // Descarta leituras na zona cega (< 0,22 m) ou maiores que a caixa (> 2,50 m)
+      if (d >= 0.22f && d <= 2.50f) {
         leituras[validas++] = d;
       }
     }
@@ -109,9 +192,9 @@ Medicao realizarMedicaoCompleta() {
   m.tempInternaEspC = temperatureRead();
   m.rssi            = (WiFi.status() == WL_CONNECTED) ? WiFi.RSSI() : 0;
 
-  const float volumeMaxUtil = calcularVolumeLitros(H_MAX_UTIL_M);
+  const float volumeMaxUtil = max(1.0f, calcularVolumeLitros(hMaxUtilAtivoM));
   if (m.distanciaM > 0) {
-    m.alturaAguaM  = max(0.0f, H_SENSOR_M - m.distanciaM);
+    m.alturaAguaM  = max(0.0f, hSensorAtivoM - m.distanciaM);
     m.volumeLitros = calcularVolumeLitros(m.alturaAguaM);
     m.nivelPct     = (m.volumeLitros / volumeMaxUtil) * 100.0f;
   } else {
@@ -121,7 +204,7 @@ Medicao realizarMedicaoCompleta() {
 }
 
 String formatarMensagemStatus(const Medicao &m) {
-  String msg = "📊 *Status da Caixa d'Água (5.000 L)*\n\n";
+  String msg = "📊 *Status da Caixa d'Água (" + String(nomeCaixaAtiva) + ")*\n\n";
   if (m.distanciaM > 0) {
     msg += "💧 *Nível:* " + String(m.nivelPct, 1) + "%\n";
     msg += "🪣 *Volume:* " + String(m.volumeLitros, 0) + " L\n";
@@ -234,6 +317,32 @@ void responderComandosTelegram() {
         Medicao mAtual = realizarMedicaoCompleta();
         bot.sendMessage(chatId, formatarMensagemStatus(mAtual), "Markdown");
       }
+      else if (texto.startsWith("/modelo") || texto.startsWith("/caixa")) {
+        int espacoIdx = texto.indexOf(' ');
+        int litrosArg = (espacoIdx > 0) ? texto.substring(espacoIdx + 1).toInt() : 0;
+        if (aplicarPresetPorLitros(litrosArg)) {
+          Medicao mAtual = realizarMedicaoCompleta();
+          enviarThingSpeak(mAtual);
+          enviarHomeAssistant(mAtual);
+          bot.sendMessage(chatId,
+            "✅ *Modelo da Caixa alterado para Fortlev " + String(nomeCaixaAtiva) + " (Tronco de Cone)!*\n\n" +
+            formatarMensagemStatus(mAtual),
+            "Markdown");
+        } else {
+          bot.sendMessage(chatId,
+            "🪣 *Modelo atual:* `" + String(nomeCaixaAtiva) + "`\n\n"
+            "Para alterar o tamanho pelo Telegram, envie:\n"
+            "• `/modelo 310`\n"
+            "• `/modelo 500`\n"
+            "• `/modelo 750`\n"
+            "• `/modelo 1000` *(Padrão)*\n"
+            "• `/modelo 1500`\n"
+            "• `/modelo 2000`\n"
+            "• `/modelo 3000`\n"
+            "• `/modelo 5000`",
+            "Markdown");
+        }
+      }
       else if (texto == "/continuo") {
         modoContinuoAtivo = true;
         bot.sendMessage(chatId,
@@ -251,9 +360,10 @@ void responderComandosTelegram() {
       }
       else {
         String boasVindas = "👋 Olá, *" + nome + "*!\n"
-                            "Sou o monitor da sua *Caixa d'Água Fortlev 5.000 L*.\n\n"
+                            "Sou o monitor da sua *Caixa d'Água Fortlev " + String(nomeCaixaAtiva) + "*.\n\n"
                             "📋 *Comandos disponíveis:*\n"
                             "• `/nivel` ou `/status` — Mede o nível, volume em litros e temperatura agora\n"
+                            "• `/modelo 1000` — Alterna o tamanho da caixa (310, 500, 750, 1000, 1500, 2000, 3000, 5000)\n"
                             "• `/continuo` — Fica online respondendo na hora (sem dormir)\n"
                             "• `/economia` — Ativa o modo Deep Sleep (economia solar)\n"
                             "• `/ajuda` — Mostra esta mensagem\n\n"
