@@ -65,7 +65,12 @@
               class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-sm focus:outline-none focus:border-sky-400" />
           </div>
           <div>
-            <label class="block text-xs text-slate-400 mb-1">Senha</label>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-xs text-slate-400">Senha</label>
+              <button id="btnForgotPass" type="button" class="text-[11px] text-sky-400 hover:text-sky-300 underline">
+                Esqueci minha senha / Redefinir
+              </button>
+            </div>
             <input id="loginPass" type="password" autocomplete="current-password" required
               placeholder="••••••••"
               class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-sm focus:outline-none focus:border-sky-400" />
@@ -713,6 +718,17 @@
     document.getElementById('tabRegisterBtn').addEventListener('click', () => switchAuthTab('register'));
     document.getElementById('btnBackToLogin').addEventListener('click', () => switchAuthTab('login'));
 
+    document.getElementById('btnForgotPass').addEventListener('click', () => {
+      const typedId = document.getElementById('loginId').value.trim().toLowerCase();
+      switchAuthTab('register');
+      if (typedId.includes('@')) {
+        document.getElementById('regEmail').value = typedId;
+      } else if (typedId.length > 0) {
+        document.getElementById('regUser').value = typedId;
+      }
+      showAuthAlert('Para redefinir sua senha, preencha seu usuário, e-mail, a nova senha desejada e o seu Código de Liberação.', false);
+    });
+
     // Validação do Código de Liberação na tela de pendência
     document.getElementById('btnActivateCode').addEventListener('click', async () => {
       const vault = loadVault();
@@ -728,6 +744,9 @@
 
       userRecord.approved = true;
       userRecord.unlockedRk = rk;
+      if (userRecord.email === ADMIN_EMAIL) {
+        userRecord.isAdmin = true;
+      }
       saveVault(vault);
       showAuthAlert('Acesso liberado com sucesso!', false);
       setTimeout(() => unlockDashboard(userRecord), 500);
@@ -851,6 +870,9 @@
         if (!unlockedRk) {
           showAuthAlert('O Código de Liberação informado não é válido para o e-mail ' + email);
           return;
+        }
+        if (email === ADMIN_EMAIL) {
+          isAdmin = true;
         }
       }
 
